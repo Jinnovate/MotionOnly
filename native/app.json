@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Motion Only",
+    "slug": "motion-only",
+    "version": "0.2.0",
+    "icon": "./assets/motion-only-app-icon.png",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "motiononly",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.motiononly.app"
+    },
+    "android": {
+      "package": "com.motiononly.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/motion-only-app-icon.png",
+        "backgroundColor": "#090A0B"
+      }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
+  }
+}

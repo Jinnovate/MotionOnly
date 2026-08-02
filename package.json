@@ -1,0 +1,19 @@
+{
+  "name": "common-ground",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite --configLoader runner",
+    "build": "vite build --configLoader runner && node scripts/package.mjs",
+    "preview": "node scripts/local-preview.mjs"
+  },
+  "dependencies": {
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.5"
+  }
+}

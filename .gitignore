@@ -1,0 +1,16 @@
+node_modules
+.next
+/dist
+.npm-cache
+.expo-home
+.env*
+!.env.example
+!api/.env.example
+!native/.env.example
+*.log
+work
+native/.expo
+native/dist-android
+native/dist-ios
+api/.env
+api/dist
