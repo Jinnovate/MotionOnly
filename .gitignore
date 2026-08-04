@@ -14,3 +14,4 @@ native/dist-android
 native/dist-ios
 api/.env
 api/dist
+outputs/
