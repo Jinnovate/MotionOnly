@@ -162,7 +162,7 @@ function MotionTopbar({ setOpen, setActive, notifications, setNotifications, the
     <header className="topbar">
       <button className="menu" onClick={() => setOpen(true)}><Menu size={21}/></button>
       <div className="top-actions">
-        <div className="privacy-pill"><Lock size={13}/> {realBeta ? "Invite-only" : "Members only"} · private by default</div>
+        <div className="privacy-pill"><Lock size={13}/> {realBeta ? "Invite-only" : "Members only"} · private by default · Live test build 5 Aug</div>
         <div className="theme-control" ref={themeRef}>
           <button className="icon-button theme-button" onClick={(event) => { event.stopPropagation(); setThemeOpen(!themeOpen); }} aria-label="Colour scheme"><Palette size={18}/><span>{activeTheme}</span></button>
           {themeOpen && <div className="theme-menu">
