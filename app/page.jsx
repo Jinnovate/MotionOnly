@@ -162,7 +162,7 @@ function MotionTopbar({ setOpen, setActive, notifications, setNotifications, the
     <header className="topbar">
       <button className="menu" onClick={() => setOpen(true)}><Menu size={21}/></button>
       <div className="top-actions">
-        <div className="privacy-pill"><Lock size={13}/> {realBeta ? "Invite-only" : "Members only"} · private by default · Live test build 5 Aug</div>
+        <div className="privacy-pill"><Lock size={13}/> {realBeta ? "Invite-only" : "Members only"} · private by default</div>
         <div className="theme-control" ref={themeRef}>
           <button className="icon-button theme-button" onClick={(event) => { event.stopPropagation(); setThemeOpen(!themeOpen); }} aria-label="Colour scheme"><Palette size={18}/><span>{activeTheme}</span></button>
           {themeOpen && <div className="theme-menu">
@@ -220,6 +220,14 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
   const [editingMoveId, setEditingMoveId] = useState(null);
   const completed = habits.filter(h => h.done).length;
   const completedMotions = motions.filter(m => m.done).length;
+  const baseExp = completedMotions * 25 + completed * 10;
+  const levelSize = 250;
+  const currentLevel = Math.floor(baseExp / levelSize) + 1;
+  const levelExp = baseExp % levelSize;
+  const momentumTarget = 100;
+  const momentumPoints = Math.min(completedMotions * 25 + completed * 10, momentumTarget);
+  const momentumPercent = Math.round((momentumPoints / momentumTarget) * 100);
+  const momentumBonus = momentumPoints >= momentumTarget ? 50 : 0;
   const startPanel = (type) => {
     setDraft("");
     setFocus("Business");
@@ -264,6 +272,15 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
     <>
       <section className="welcome">
         <div><p className="eyebrow">{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }).toUpperCase()} · TODAY'S MOTION</p><h1>Momentum is earned.</h1><p>Move with intent. Build with others. Keep the promise.</p></div>
+      </section>
+      <section className="motion-rules card">
+        <div><p className="eyebrow">HOW PROGRESS IS SCORED</p><h2>No guessed percentages. Only evidence.</h2><p>Complete clear actions to earn permanent EXP and weekly Momentum. Momentum resets at the end of the week; EXP stays with your account.</p></div>
+        <div className="rule-grid">
+          <span><strong>+25 EXP</strong>Completed daily move</span>
+          <span><strong>+10 EXP</strong>Daily standard checked</span>
+          <span><strong>100 pts</strong>Weekly Momentum target</span>
+          <span><strong>+50 EXP</strong>Momentum bonus when the bar is filled</span>
+        </div>
       </section>
       <form className="today-panel motion-entry" onSubmit={saveNewMove}>
         <div>
@@ -315,7 +332,7 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
                 { label: "Delete", danger: true, onClick: () => { setMotions(motions.filter(item => item.id !== motion.id)); toast("Move removed."); } },
               ]}/>
             </div>) : <div className="empty-state compact"><strong>No moves set yet</strong><span>Use the box above to set your first motion for today.</span></div>}
-            <div className="focus-foot"><div><span>{completedMotions} of {motions.length} complete</span><div className="mini-progress"><i style={{width:`${motions.length ? completedMotions / motions.length * 100 : 0}%`}}/></div></div><p><Lock size={12}/> Only visible to you</p></div>
+            <div className="focus-foot"><div><span>{completedMotions} of {motions.length} moves complete · {baseExp} EXP earned today</span><div className="mini-progress"><i style={{width:`${motions.length ? completedMotions / motions.length * 100 : 0}%`}}/></div></div><p><Lock size={12}/> Only visible to you</p></div>
           </section>
 
           <section className="goals-section">
@@ -325,12 +342,12 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
                 <div className={`goal-icon ${g.color}`}><Goal size={18}/></div>
                 <OptionsMenu label="Goal options" items={[
                   { label: "Open goal", onClick: () => setActive("Goals & habits") },
-                  { label: "Log progress", onClick: () => { setActive("Goals & habits"); toast("Goal progress opened."); } },
+                  { label: "Open evidence log", onClick: () => { setActive("Goals & habits"); toast("Evidence log opened."); } },
                   { label: "Set review reminder", onClick: () => { setActive("Schedule"); toast("Goal review reminder opened."); } },
                   { label: "Privacy: only me", active: true, onClick: () => toast("Goal remains private to you.") },
                 ]}/><p className="goal-area">{g.area}</p><h3>{g.title}</h3>
-                <div className="goal-progress"><i style={{width:`${g.progress}%`}} className={g.color}/></div>
-                <div className="goal-meta"><strong>{g.progress}%</strong><span><CalendarDays size={12}/>{g.date}</span></div>
+                <div className="goal-progress"><i style={{width:`${Math.min((g.evidence || 0) * 20, 100)}%`}} className={g.color}/></div>
+                <div className="goal-meta"><strong>{g.evidence || 0} proofs</strong><span><CalendarDays size={12}/>{g.date}</span></div>
               </article>) : <div className="empty-state goal-empty"><strong>No goals yet</strong><span>Add your first goal from Goals & habits when you are ready.</span></div>}
             </div>
           </section>
@@ -350,8 +367,8 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
             <button className="add-habit" onClick={() => startPanel("habit")}><Plus size={15}/> Add a discipline</button>
           </section>
           <section className="card pulse">
-            <p className="eyebrow">MOMENTUM INDEX</p><div className="pulse-top"><div className="ring empty-ring"><span>0<small>%</small></span></div><div><h3>Ready to<br/>build.</h3><p>Starts when moves are completed</p></div></div>
-            <div className="stat-row"><span>Moves completed<strong>{completedMotions} <small>/ {motions.length}</small></strong></span><span>Standards done<strong>{completed} <small>/ {habits.length}</small></strong></span></div>
+            <p className="eyebrow">MOMENTUM INDEX</p><div className="pulse-top"><div className="ring" style={{background:`conic-gradient(var(--gold) 0 ${momentumPercent}%,#303639 ${momentumPercent}%)`}}><span>{momentumPoints}<small>/100</small></span></div><div><h3>{momentumPoints >= momentumTarget ? "Bonus locked." : "Build the week."}</h3><p>{momentumPoints >= momentumTarget ? `+${momentumBonus} EXP weekly bonus ready` : `${momentumTarget - momentumPoints} pts to weekly bonus`}</p></div></div>
+            <div className="stat-row"><span>Level<strong>{currentLevel} <small>{levelExp}/{levelSize} EXP</small></strong></span><span>Momentum<strong>{momentumPoints} <small>/ {momentumTarget}</small></strong></span></div>
             <button className="soft-btn" onClick={() => setActive("Goals & habits")}>Open weekly debrief <ChevronRight size={15}/></button>
           </section>
         </aside>
@@ -1178,6 +1195,8 @@ function OperationsPage({ toast }) {
 function SimpleGoalsHabitsPage({ toast }) {
   const [goalRows, setGoalRows] = useState(goals.map((goal, index) => ({
     ...goal,
+    evidence: 0,
+    exp: 0,
     today: ["Send five qualified business messages", "Trade only if the A+ setup appears", "Complete strength session and Zone 2"][index],
   })));
   const [standardRows, setStandardRows] = useState(baseHabits);
@@ -1185,14 +1204,16 @@ function SimpleGoalsHabitsPage({ toast }) {
   const [draft, setDraft] = useState({ title: "", area: "BUSINESS", type: "Goal" });
   const [note, setNote] = useState("");
   const completed = standardRows.filter(standard => standard.done).length;
-  const averageProgress = goalRows.length ? Math.round(goalRows.reduce((sum, goal) => sum + goal.progress, 0) / goalRows.length) : 0;
+  const goalEvidence = goalRows.reduce((sum, goal) => sum + (goal.evidence || 0), 0);
+  const goalExp = goalRows.reduce((sum, goal) => sum + (goal.exp || 0), 0);
+  const standardsExp = completed * 10;
   const toggleStandard = (id) => {
     setStandardRows(standardRows.map(standard => standard.id === id ? { ...standard, done: !standard.done } : standard));
     toast("Standard updated privately.");
   };
   const logGoal = (index) => {
-    setGoalRows(goalRows.map((goal, goalIndex) => goalIndex === index ? { ...goal, progress: Math.min(goal.progress + 5, 100) } : goal));
-    toast("Progress logged.");
+    setGoalRows(goalRows.map((goal, goalIndex) => goalIndex === index ? { ...goal, evidence: (goal.evidence || 0) + 1, exp: (goal.exp || 0) + 25 } : goal));
+    toast("Evidence logged. +25 EXP.");
   };
   const saveItem = (event) => {
     event.preventDefault();
@@ -1200,7 +1221,7 @@ function SimpleGoalsHabitsPage({ toast }) {
     if (draft.type === "Habit") {
       setStandardRows([{ id: Date.now(), label: draft.title.trim(), meta: "Daily standard", icon: "+", done: false }, ...standardRows]);
     } else {
-      setGoalRows([{ title: draft.title.trim(), area: draft.area, progress: 0, date: "Set review", color: "gold", today: "Choose one action for today" }, ...goalRows]);
+      setGoalRows([{ title: draft.title.trim(), area: draft.area, evidence: 0, exp: 0, date: "Set review", color: "gold", today: "Choose one action for today" }, ...goalRows]);
     }
     setDraft({ title: "", area: "BUSINESS", type: "Goal" });
     setCreating(false);
@@ -1224,16 +1245,25 @@ function SimpleGoalsHabitsPage({ toast }) {
       <button type="button" onClick={() => setCreating(false)}>Cancel</button><button type="submit">Save</button>
     </form>}
     <div className="simple-scoreboard">
-      <span><strong>{averageProgress}%</strong>Goal progress</span>
+      <span><strong>{goalEvidence}</strong>Evidence logs</span>
+      <span><strong>{goalExp + standardsExp}</strong>EXP earned here</span>
       <span><strong>{completed}/{standardRows.length}</strong>Standards done</span>
-      <span><strong>Fri</strong>Review day</span>
     </div>
+    <section className="accountability-strip">
+      <div><p className="eyebrow">ACCOUNTABILITY MODEL</p><h2>Private first. Shared when useful.</h2><p>Members can keep goals private, share a commitment with a trusted member, or ask for a check-in. The app should hold people to evidence, not public embarrassment.</p></div>
+      <div className="accountability-steps">
+        <span><strong>1</strong>Set a clear outcome</span>
+        <span><strong>2</strong>Choose today’s proof</span>
+        <span><strong>3</strong>Log evidence</span>
+        <span><strong>4</strong>Ask for a check-in if needed</span>
+      </div>
+    </section>
     <div className="simple-goals-layout">
       <section className="simple-panel">
         <div className="section-head"><div><p className="eyebrow">DIRECTION</p><h2>Goals</h2></div></div>
         {goalRows.length ? goalRows.map((goal, index) => <article className="simple-goal-row" key={`${goal.title}-${index}`}>
-          <div><span>{goal.area}</span><h3>{goal.title}</h3><p>Today: {goal.today}</p></div>
-          <div><strong>{goal.progress}%</strong><i><b style={{width:`${goal.progress}%`}}/></i><button onClick={() => logGoal(index)}>Log +5%</button></div>
+          <div><span>{goal.area}</span><h3>{goal.title}</h3><p>Today’s proof: {goal.today}</p></div>
+          <div><strong>{goal.evidence || 0}</strong><small>evidence logs</small><button onClick={() => logGoal(index)}>Log evidence +25 EXP</button><button onClick={() => toast("Accountability check-in requested privately.")}>Request check-in</button></div>
         </article>) : <div className="empty-state"><strong>No goals yet</strong><span>Add one clear goal when you are ready to track it.</span></div>}
       </section>
       <aside className="simple-panel">
