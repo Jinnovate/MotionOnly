@@ -24,9 +24,9 @@ services:
       - key: APP_DEEP_LINK
         value: motiononly://auth
       - key: PUBLIC_APP_URL
-        value: https://common-ground-circle.realworldjoel.chatgpt.site
+        value: https://motiononly.netlify.app
       - key: WEB_APP_ORIGIN
-        value: https://common-ground-circle.realworldjoel.chatgpt.site
+        value: https://motiononly.netlify.app
       - key: SESSION_TTL_SECONDS
         value: "2592000"
       - key: MAGIC_LINK_TTL_SECONDS
