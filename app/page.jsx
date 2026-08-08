@@ -278,6 +278,8 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
         <div className="rule-grid">
           <span><strong>+25 EXP</strong>Completed daily move</span>
           <span><strong>+10 EXP</strong>Daily standard checked</span>
+          <span><strong>+5 EXP</strong>Qualified network contribution</span>
+          <span><strong>+10 EXP</strong>Useful project update</span>
           <span><strong>100 pts</strong>Weekly Momentum target</span>
           <span><strong>+50 EXP</strong>Momentum bonus when the bar is filled</span>
         </div>
@@ -814,6 +816,52 @@ function SchedulePage({ toast }) {
   );
 }
 
+const lowValueContributionPhrases = [
+  "nice", "same", "agreed", "facts", "lol", "lmao", "thanks", "thanks bro", "let's go", "lets go",
+  "fire", "good stuff", "big win", "dm me", "check dm", "sent you a dm", "follow me", "like this",
+];
+
+function wordsIn(text = "") {
+  return text.trim().split(/\s+/).filter(Boolean);
+}
+
+function normaliseContribution(text = "") {
+  return text.toLowerCase().replace(/https?:\/\/\S+/g, " link ").replace(/[^a-z0-9£$% ]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function hasMeaningfulSignal(text = "", sectionName = "Network") {
+  const lowered = text.toLowerCase();
+  const generalSignals = ["because", "lesson", "question", "feedback", "example", "result", "next step", "blocked", "blocker", "decision", "proof", "evidence", "review", "plan", "?"];
+  const roomSignals = {
+    Network: ["context", "learned", "try", "improve", "resource", "support", "accountability"],
+    Messages: ["can you", "i need", "follow up", "intro", "check in", "accountability"],
+    Projects: ["update", "done", "next", "blocked", "decision", "owner", "deadline", "file", "uploaded", "review"],
+  };
+  return [...generalSignals, ...(roomSignals[sectionName] || [])].some(signal => lowered.includes(signal));
+}
+
+function evaluateContribution(text = "", sectionName = "Network", existingMessages = []) {
+  const trimmed = text.trim();
+  const wordCount = wordsIn(trimmed).length;
+  const normalised = normaliseContribution(trimmed);
+  const previous = existingMessages.map(message => normaliseContribution(message[1] || ""));
+  const mostlyEmojiOrSymbols = trimmed.length > 0 && normalised.replace(/\blink\b/g, "").length < Math.max(4, trimmed.length * 0.2);
+  const linkOnly = /https?:\/\/\S+/i.test(trimmed) && wordCount < 8;
+  const exactLowValue = lowValueContributionPhrases.includes(normalised);
+  const repeated = normalised.length > 8 && previous.slice(-8).some(body => body === normalised || body.includes(normalised) || normalised.includes(body));
+
+  if (!trimmed) return { eligible: false, exp: 0, label: "Write a useful contribution", reason: "No message entered yet." };
+  if (wordCount < 8) return { eligible: false, exp: 0, label: "No EXP", reason: "Too short. Add context, a question, a lesson, or a next step." };
+  if (mostlyEmojiOrSymbols || linkOnly) return { eligible: false, exp: 0, label: "No EXP", reason: "Links or reactions need useful context before they count." };
+  if (exactLowValue) return { eligible: false, exp: 0, label: "No EXP", reason: "This looks like a low-value reaction, not a contribution." };
+  if (repeated) return { eligible: false, exp: 0, label: "No EXP", reason: "Repeated or copied messages do not earn Momentum." };
+
+  const signal = hasMeaningfulSignal(trimmed, sectionName);
+  if (sectionName === "Projects" && signal) return { eligible: true, exp: 10, label: "+10 EXP eligible", reason: "Project update has useful context or a next step." };
+  if (signal) return { eligible: true, exp: 5, label: "+5 EXP eligible", reason: "Contribution appears useful enough to earn chat Momentum." };
+  return { eligible: false, exp: 0, label: "Needs signal", reason: "Long enough, but add a question, result, lesson, blocker, decision, or next step." };
+}
+
 function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettings }) {
   const pageCopy = pages[name];
   const sectionName = name === "Network" ? "Network" : name;
@@ -866,6 +914,7 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
     outcome: "",
     review: "Weekly review",
   });
+  const draftQuality = evaluateContribution(draft, sectionName, messages);
   const createItem = () => {
     if (sectionName === "Network") {
       setCreatingRoom(true);
@@ -913,9 +962,10 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
   const send = (event) => {
     event.preventDefault();
     if (!draft.trim()) return;
-    setMessages([...messages, ["Joel Gilbert", draft.trim(), "now"]]);
+    const quality = evaluateContribution(draft, sectionName, messages);
+    setMessages([...messages, ["Joel Gilbert", draft.trim(), "now", quality]]);
     setDraft("");
-    toast(sectionName === "Projects" ? "Workspace update posted." : "Message sent.");
+    toast(quality.eligible ? `${sectionName === "Projects" ? "Workspace update posted" : "Message sent"}. ${quality.label}.` : `${sectionName === "Projects" ? "Workspace update posted" : "Message sent"}. No EXP awarded.`);
   };
   const uploadWorkspaceMedia = (event) => {
     const files = Array.from(event.target.files || []);
@@ -982,13 +1032,14 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
                 <span><strong>0</strong> comments given today</span>
                 <span><strong>0</strong> content tips pinned</span>
               </div>}
-              {roomMessages.length ? roomMessages.map(([author, body, time], index) => <article className="room-message" key={`${author}-${index}`}>
+              {roomMessages.length ? roomMessages.map(([author, body, time, quality], index) => <article className="room-message" key={`${author}-${index}`}>
                 <i>{author.split(" ").map(part => part[0]).join("").slice(0,2)}</i>
-                <div><header><strong>{author}</strong><span>{time}</span></header><p>{body}</p></div>
+                <div><header><strong>{author}</strong><span>{time}</span></header><p>{body}</p>{quality && <small className={`quality-badge ${quality.eligible ? "eligible" : ""}`}>{quality.label}</small>}</div>
               </article>) : <div className="empty-state compact"><strong>No messages yet</strong><span>Start the conversation when there is something useful to share.</span></div>}
               <form className="room-composer" onSubmit={send}>
                 <input value={draft} onChange={event => setDraft(event.target.value)} placeholder={isConversation ? "Write a private reply..." : isSocialRoom ? "Share a post link, support request or content tip..." : "Add to the room..."} />
                 <button type="submit">{isConversation ? "Send" : "Post"}</button>
+                <div className={`quality-meter ${draftQuality.eligible ? "eligible" : ""}`}><strong>{draftQuality.label}</strong><span>{draftQuality.reason}</span></div>
               </form>
             </main>
           </div>
@@ -1024,16 +1075,17 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
         </div>}
         <div className="message-feed">
           {messages.length ? messages.map((message, index) => {
-            const [author, body] = message;
+            const [author, body, time, quality] = message;
             return <div className="feed-item" key={`${author}-${index}`}>
             <i>{author.split(" ").map(part => part[0]).join("").slice(0,2)}</i>
-            <span><strong>{author}</strong><p>{body}</p></span>
+            <span><strong>{author}</strong><p>{body}</p>{quality && <small className={`quality-badge ${quality.eligible ? "eligible" : ""}`}>{quality.label}</small>}</span>
             {sectionName === "Projects" && <button className="pin-btn" onClick={() => pinMessage(message)} type="button"><Bookmark size={13}/> Pin</button>}
           </div>}) : <div className="empty-state compact"><strong>No workspace updates yet</strong><span>Post the first update once this workspace is active.</span></div>}
         </div>
         <form className="composer" onSubmit={send}>
           <input value={draft} onChange={event => setDraft(event.target.value)} placeholder={sectionName === "Projects" ? "Post a private workspace update..." : "Write a message..."} />
           <button type="submit">{data.emptyAction}</button>
+          <div className={`quality-meter ${draftQuality.eligible ? "eligible" : ""}`}><strong>{draftQuality.label}</strong><span>{draftQuality.reason}</span></div>
         </form>
       </section>
     </div>;
