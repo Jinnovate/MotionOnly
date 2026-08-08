@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
 import {
   AlertTriangle, Archive, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmark,
   CalendarDays, Check, CheckCircle2,
@@ -24,6 +25,24 @@ const SESSION_KEY = "motion-only-api-token";
 
 function apiBaseUrl() {
   return (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+}
+
+function supabaseConfig() {
+  const url = (import.meta.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+  return { url, anonKey, enabled: Boolean(url && anonKey) };
+}
+
+function profileFromSupabaseUser(user) {
+  const name = user?.user_metadata?.display_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "Motion Only member";
+  return {
+    id: user?.id,
+    email: user?.email,
+    role: user?.user_metadata?.role || "member",
+    displayName: name,
+    display_name: name,
+    onboardingCompleted: Boolean(user?.user_metadata?.onboarding_completed),
+  };
 }
 
 function displayNameFor(user) {
@@ -1397,7 +1416,7 @@ function FeaturePage({ name, toast }) {
   </div>;
 }
 
-function AuthGate({ apiBase, onSession }) {
+function AuthGate({ apiBase, supabase, onSession }) {
   const params = new URLSearchParams(window.location.search);
   const [mode, setMode] = useState(params.get("code") ? "join" : "signin");
   const [method, setMethod] = useState("password");
@@ -1416,6 +1435,45 @@ function AuthGate({ apiBase, onSession }) {
     setError("");
     try {
       const normalEmail = email.trim().toLowerCase();
+      if (supabase) {
+        if (mode === "join") {
+          const code = inviteCode.trim();
+          const { data: inviteResult, error: inviteError } = await supabase
+            .rpc("claim_motion_invite", { invite_code: code, invite_email: normalEmail });
+          if (inviteError) throw inviteError;
+          const invite = Array.isArray(inviteResult) ? inviteResult[0] : inviteResult;
+          if (!invite) throw new Error("Invite code was not recognised.");
+          const { data, error: signUpError } = await supabase.auth.signUp({
+            email: normalEmail,
+            password,
+            options: {
+              data: { display_name: name.trim(), role: invite.role || "member" },
+              emailRedirectTo: window.location.origin,
+            },
+          });
+          if (signUpError) throw signUpError;
+          if (data.user) {
+            await supabase.from("motion_profiles").upsert({ id: data.user.id, email: normalEmail, display_name: name.trim(), role: invite.role || "member" });
+            await supabase.rpc("mark_motion_invite_accepted", { invite_code: code });
+          }
+          if (data.session) onSession({ token: data.session.access_token, user: profileFromSupabaseUser(data.user) });
+          else setMessage("Account created. Check your email to confirm access, then sign in.");
+          return;
+        }
+        if (method === "magic") {
+          const { error: magicError } = await supabase.auth.signInWithOtp({
+            email: normalEmail,
+            options: { emailRedirectTo: window.location.origin },
+          });
+          if (magicError) throw magicError;
+          setMessage("If this email has access, a secure sign-in link is on its way.");
+          return;
+        }
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({ email: normalEmail, password });
+        if (signInError) throw signInError;
+        onSession({ token: data.session?.access_token, user: profileFromSupabaseUser(data.user) });
+        return;
+      }
       if (mode === "join") {
         const result = await apiRequest("/v1/auth/accept-invite", {
           apiBase,
@@ -1576,7 +1634,9 @@ function InstallPrompt({ toast }) {
 
 export default function App() {
   const apiBase = useMemo(() => apiBaseUrl(), []);
-  const realBeta = Boolean(apiBase);
+  const supabaseSettings = useMemo(() => supabaseConfig(), []);
+  const supabase = useMemo(() => supabaseSettings.enabled ? createClient(supabaseSettings.url, supabaseSettings.anonKey) : null, [supabaseSettings]);
+  const realBeta = Boolean(apiBase || supabase);
   const [active, setActive] = useState("Today");
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState(false);
@@ -1592,7 +1652,7 @@ export default function App() {
     localStorage.setItem("motion-only-theme", theme);
   }, [theme]);
   useEffect(() => {
-    if (!realBeta) return;
+    if (!realBeta || supabase) return;
     if (!sessionToken) {
       setAuthChecked(true);
       setCurrentUser(null);
@@ -1617,6 +1677,28 @@ export default function App() {
       });
     return () => { cancelled = true; };
   }, [apiBase, realBeta, sessionToken]);
+  useEffect(() => {
+    if (!supabase) return;
+    let cancelled = false;
+    setAuthChecked(false);
+    supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return;
+      const user = data.session?.user;
+      setSessionToken(data.session?.access_token || "");
+      setCurrentUser(user ? profileFromSupabaseUser(user) : null);
+      setAuthChecked(true);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      const user = session?.user;
+      setSessionToken(session?.access_token || "");
+      setCurrentUser(user ? profileFromSupabaseUser(user) : null);
+      setAuthChecked(true);
+    });
+    return () => {
+      cancelled = true;
+      listener.subscription.unsubscribe();
+    };
+  }, [supabase]);
   const toast = (text) => { setToastText(text); setTimeout(() => setToastText(""), 2800); };
   const toggleHabit = id => { setHabits(habits.map(h => h.id === id ? {...h, done: !h.done} : h)); toast("Habit check-in saved privately."); };
   const addHabit = habit => setHabits([{ id: Date.now(), ...habit }, ...habits]);
@@ -1628,7 +1710,8 @@ export default function App() {
     setAuthChecked(true);
   };
   const logout = () => {
-    if (sessionToken) apiRequest("/v1/auth/logout", { apiBase, token: sessionToken, method: "POST" }).catch(() => undefined);
+    if (supabase) supabase.auth.signOut().catch(() => undefined);
+    else if (sessionToken) apiRequest("/v1/auth/logout", { apiBase, token: sessionToken, method: "POST" }).catch(() => undefined);
     localStorage.removeItem(SESSION_KEY);
     setSessionToken("");
     setCurrentUser(null);
@@ -1636,7 +1719,7 @@ export default function App() {
     toast("Signed out.");
   };
   if (realBeta && !authChecked) return <div className="auth-loading"><div className="brand auth-logo"><div className="brandmark"><img src="/motion-only-logo-dark.png" alt="" /></div><div><strong>MOTION <b>ONLY</b></strong><span>CONNECT · BUILD · ADVANCE</span></div></div><p>Checking secure session…</p></div>;
-  if (realBeta && !currentUser) return <AuthGate apiBase={apiBase} onSession={onSession}/>;
+  if (realBeta && !currentUser) return <AuthGate apiBase={apiBase} supabase={supabase} onSession={onSession}/>;
   return <div className="app-shell">
     <Sidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} currentUser={currentUser} onLogout={logout} realBeta={realBeta}/>
     <div className="content-shell">

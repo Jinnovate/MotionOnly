@@ -92,6 +92,39 @@ For a real external test, use:
 - Resend for email delivery
 - Cloudflare R2 or another S3-compatible private bucket for uploads
 
+## Faster Supabase beta route
+
+If Render asks for paid infrastructure, use Supabase first. This gives Motion Only real accounts without deploying the custom API yet.
+
+1. Create a Supabase project.
+2. In Supabase, open the SQL editor.
+3. Run `supabase/motion-only-beta.sql`.
+4. In Supabase Auth settings, set the site URL to:
+
+```text
+https://motiononly.netlify.app
+```
+
+5. For the simplest test, disable email confirmation while you create the first few accounts, or keep it enabled if you want every user to confirm by email.
+6. Add invite codes manually in the SQL editor:
+
+```sql
+insert into public.motion_invites (code, email, role)
+values ('MO-TEST-001', 'tester@example.com', 'member');
+```
+
+7. In Netlify, add these environment variables:
+
+```text
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-public-anon-key
+```
+
+8. Leave `VITE_API_URL` empty unless you are using the custom API.
+9. Redeploy Netlify.
+
+The live app will then show the private membership login screen. Members can create accounts only with a valid invite code.
+
 Production environment settings:
 
 ```text
