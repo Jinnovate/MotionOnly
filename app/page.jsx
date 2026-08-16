@@ -133,6 +133,9 @@ function Sidebar({ active, setActive, open, setOpen, currentUser, onLogout, real
             <ShieldCheck size={18}/><span>Operations</span>
           </button>}
           <button className={active === "Settings" ? "active" : ""} onClick={() => {setActive("Settings");setOpen(false)}}><Settings size={18}/><span>Settings & privacy</span></button>
+          {realBeta && <button className="signout-nav" onClick={() => { onLogout?.(); setOpen(false); }}>
+            <LogOut size={18}/><span>Sign out</span>
+          </button>}
         </div>
         <div className="profile-mini">
           <div className="avatar">{initials}</div>

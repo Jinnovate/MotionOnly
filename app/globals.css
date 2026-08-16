@@ -284,3 +284,6 @@ body[data-theme="light"] .example-loop-content article,body[data-theme="natural"
 .auth-message,.auth-error{margin:0;border:1px solid;padding:10px 11px;font-size:10px;line-height:1.55}.auth-message{border-color:#33422f;background:#111a14;color:#a6c29d}.auth-error{border-color:#543029;background:#211311;color:#ffb09a}.auth-submit{justify-content:center;width:100%;margin-top:2px}.auth-submit:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.4)}.auth-footnote{margin:0;color:#737b7c;font-size:9px;line-height:1.6;text-align:center}
 .auth-loading{min-height:100vh;background:#0a0b0c;color:#9ba1a1;display:grid;place-content:center;gap:18px;text-align:center}.auth-loading .auth-logo{padding:0;justify-content:center}.auth-loading p{margin:0;text-transform:uppercase;letter-spacing:1.2px;font-size:9px}
 @media(max-width:900px){.auth-shell{grid-template-columns:1fr;padding:34px 18px;gap:26px}.auth-logo{padding-bottom:34px}.auth-brand h1{font-size:54px}.auth-brand>p:not(.eyebrow){font-size:12px}.auth-card{padding:17px}}
+
+.signout-nav{color:#d8a08d!important}
+@media(max-width:760px){.top-actions .top-avatar{display:grid!important}}
