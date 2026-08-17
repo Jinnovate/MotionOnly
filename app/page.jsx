@@ -3,17 +3,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import {
-  AlertTriangle, Archive, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmark,
+  Activity, AlertTriangle, Archive, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmark,
   CalendarDays, Check, CheckCircle2,
-  ChevronDown, ChevronRight, Circle, Clock3, FolderKanban, Goal, Heart,
+  ChevronDown, ChevronRight, Circle, Clock3, Dumbbell, Flag, FolderKanban, Goal, Heart,
   LayoutDashboard, Leaf, ListChecks, Lock, LogOut, Menu, MessageCircle, MoreHorizontal,
-  Palette, Plus, Search, Settings, ShieldCheck, Sparkles, Target, TrendingUp, Users, X
+  Palette, Plus, Search, Settings, ShieldCheck, Sparkles, Target, Timer, TrendingUp, Users, X
 } from "lucide-react";
 import { libraryCategories, libraryContent, libraryStats } from "./libraryContent";
 
 const nav = [
   ["Today", LayoutDashboard], ["Goals & habits", Target], ["Network", Users],
-  ["Messages", MessageCircle], ["Projects", FolderKanban], ["Schedule", CalendarDays],
+  ["Messages", MessageCircle], ["Projects", FolderKanban], ["Fitness", Dumbbell], ["Schedule", CalendarDays],
   ["Library", BookOpen],
 ];
 
@@ -73,6 +73,7 @@ const pages = {
   Network: { eyebrow: "THE NETWORK", title: "Network rooms", text: "High-trust conversations with people who sharpen your thinking and widen what is possible." },
   Messages: { eyebrow: "PRIVATE CHANNELS", title: "Direct messages", text: "Private conversations for honest feedback, useful introductions and real accountability." },
   Projects: { eyebrow: "BUILD TOGETHER", title: "Project workspaces", text: "Invitation-only teams for turning ideas into work that moves." },
+  Fitness: { eyebrow: "PHYSICAL STANDARD", title: "Fitness missions", text: "Set measurable targets, log attempts, prove progress and complete missions without guessing percentages." },
   Schedule: { eyebrow: "THE WEEK AHEAD", title: "Schedule", text: "Personal reminders, group calls and targeted accountability without the noise." },
   Library: { eyebrow: "COLLECTIVE PLAYBOOK", title: "Knowledge base", text: "Frameworks, lessons and proven practices collected by the network." },
   Admin: { eyebrow: "OPERATIONS", title: "Network operations", text: "Protect the standard. Manage access, rooms, roles and network integrity." },
@@ -1355,6 +1356,176 @@ function SimpleGoalsHabitsPage({ toast }) {
   </div>;
 }
 
+function parseRunTimeToSeconds(value = "") {
+  const parts = value.trim().split(":").map(part => Number(part));
+  if (!parts.length || parts.some(Number.isNaN)) return null;
+  if (parts.length === 1) return Math.round(parts[0] * 60);
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return parts[0] * 3600 + parts[1] * 60 + parts[2];
+}
+
+function formatRunTime(seconds) {
+  if (!Number.isFinite(seconds)) return "--:--";
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+}
+
+function FitnessPage({ toast }) {
+  const [missions, setMissions] = useState([
+    {
+      id: 1,
+      title: "5K under 27 minutes",
+      type: "Run",
+      distanceKm: 5,
+      targetSeconds: 27 * 60,
+      exp: 120,
+      momentum: 35,
+      status: "active",
+      attempts: [],
+    },
+  ]);
+  const [draft, setDraft] = useState({ title: "", distanceKm: "5", targetTime: "27:00" });
+  const [runDraft, setRunDraft] = useState({ missionId: 1, distanceKm: "5", time: "", evidence: "" });
+  const completedMissions = missions.filter(mission => mission.status === "complete").length;
+  const earnedExp = missions.filter(mission => mission.status === "complete").reduce((sum, mission) => sum + mission.exp, 0);
+  const earnedMomentum = missions.filter(mission => mission.status === "complete").reduce((sum, mission) => sum + mission.momentum, 0);
+
+  const addMission = (event) => {
+    event.preventDefault();
+    const targetSeconds = parseRunTimeToSeconds(draft.targetTime);
+    const distance = Number(draft.distanceKm);
+    if (!draft.title.trim() || !targetSeconds || !distance) return;
+    const mission = {
+      id: Date.now(),
+      title: draft.title.trim(),
+      type: "Run",
+      distanceKm: distance,
+      targetSeconds,
+      exp: 120,
+      momentum: 35,
+      status: "active",
+      attempts: [],
+    };
+    setMissions([mission, ...missions]);
+    setRunDraft(current => ({ ...current, missionId: mission.id, distanceKm: String(distance) }));
+    setDraft({ title: "", distanceKm: "5", targetTime: "27:00" });
+    toast("Fitness mission added privately.");
+  };
+
+  const logRun = (event) => {
+    event.preventDefault();
+    const mission = missions.find(item => item.id === Number(runDraft.missionId));
+    const seconds = parseRunTimeToSeconds(runDraft.time);
+    const distance = Number(runDraft.distanceKm);
+    if (!mission || !seconds || !distance) return;
+    const complete = distance >= mission.distanceKm && seconds <= mission.targetSeconds;
+    const attempt = {
+      id: Date.now(),
+      distanceKm: distance,
+      seconds,
+      evidence: runDraft.evidence.trim(),
+      complete,
+      date: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
+    };
+    setMissions(missions.map(item => item.id === mission.id ? {
+      ...item,
+      status: complete ? "complete" : item.status,
+      attempts: [attempt, ...item.attempts],
+    } : item));
+    setRunDraft({ missionId: mission.id, distanceKm: String(mission.distanceKm), time: "", evidence: "" });
+    toast(complete ? `Mission complete. +${mission.exp} EXP earned.` : "Run logged. Keep the mission active.");
+  };
+
+  const selectedMission = missions.find(item => item.id === Number(runDraft.missionId)) || missions[0];
+
+  return <div className="fitness-page">
+    <section className="fitness-hero">
+      <div>
+        <p className="eyebrow">FITNESS MISSIONS</p>
+        <h1>Make the body measurable.</h1>
+        <p>Set a clear physical target, log real attempts and complete the mission only when the result proves it. No random percentages, no vague “progress”.</p>
+      </div>
+      <div className="fitness-score">
+        <span><strong>{completedMissions}</strong>Missions complete</span>
+        <span><strong>{earnedExp}</strong>Fitness EXP</span>
+        <span><strong>{earnedMomentum}</strong>Momentum earned</span>
+      </div>
+    </section>
+
+    <section className="fitness-rules card">
+      <div><p className="eyebrow">HOW IT WORKS</p><h2>Target. Attempt. Prove. Complete.</h2><p>The web version uses honest evidence logging. Later, the mobile app can connect Strava, Apple Health, Garmin or GPS so runs can verify automatically.</p></div>
+      <div className="fitness-rule-grid">
+        <span><Flag size={16}/><strong>Mission target</strong>Example: 5K under 27:00.</span>
+        <span><Timer size={16}/><strong>Run attempt</strong>Log distance and time after the run.</span>
+        <span><CheckCircle2 size={16}/><strong>Completion rule</strong>Distance must meet the target and time must beat it.</span>
+      </div>
+    </section>
+
+    <div className="fitness-layout">
+      <main>
+        <form className="fitness-create" onSubmit={addMission}>
+          <div>
+            <p className="eyebrow">SET FITNESS MISSION</p>
+            <h2>Create a measurable target</h2>
+            <p>Best missions have a clear distance, time, lift, weight or consistency target.</p>
+          </div>
+          <input value={draft.title} onChange={event => setDraft({ ...draft, title: event.target.value })} placeholder="Example: Run 5K in under 27 minutes" />
+          <input value={draft.distanceKm} onChange={event => setDraft({ ...draft, distanceKm: event.target.value })} inputMode="decimal" aria-label="Target distance in kilometres" />
+          <input value={draft.targetTime} onChange={event => setDraft({ ...draft, targetTime: event.target.value })} placeholder="27:00" aria-label="Target time" />
+          <button type="submit"><Plus size={15}/> Add mission</button>
+        </form>
+
+        <section className="fitness-missions card">
+          <div className="section-head"><div><p className="eyebrow">ACTIVE TARGETS</p><h2>Your fitness missions</h2></div></div>
+          {missions.map(mission => {
+            const bestAttempt = mission.attempts.reduce((best, attempt) => !best || attempt.seconds < best.seconds ? attempt : best, null);
+            return <article className={`fitness-mission ${mission.status}`} key={mission.id}>
+              <div className="mission-icon">{mission.status === "complete" ? <CheckCircle2 size={22}/> : <Activity size={22}/>}</div>
+              <div>
+                <span>{mission.type} mission</span>
+                <h3>{mission.title}</h3>
+                <p>Complete when you record {mission.distanceKm}K or more in {formatRunTime(mission.targetSeconds)} or faster.</p>
+                <div className="mission-meta">
+                  <small>{mission.attempts.length} attempts</small>
+                  <small>Best: {bestAttempt ? `${bestAttempt.distanceKm}K / ${formatRunTime(bestAttempt.seconds)}` : "No run logged"}</small>
+                  <small>{mission.status === "complete" ? `+${mission.exp} EXP earned` : `Reward: +${mission.exp} EXP`}</small>
+                </div>
+              </div>
+              <OptionsMenu label="Fitness mission options" items={[
+                { label: "Log run for this", onClick: () => setRunDraft({ missionId: mission.id, distanceKm: String(mission.distanceKm), time: "", evidence: "" }) },
+                { label: "Delete", danger: true, onClick: () => { setMissions(missions.filter(item => item.id !== mission.id)); toast("Fitness mission removed."); } },
+              ]}/>
+            </article>;
+          })}
+        </section>
+      </main>
+
+      <aside className="fitness-log card">
+        <p className="eyebrow">RUN LOG</p>
+        <h2>Record an attempt</h2>
+        <p>When the logged result beats the target, the mission becomes complete and EXP is awarded.</p>
+        <form onSubmit={logRun}>
+          <label><span>Mission</span><select value={runDraft.missionId} onChange={event => {
+            const next = missions.find(mission => mission.id === Number(event.target.value));
+            setRunDraft({ ...runDraft, missionId: Number(event.target.value), distanceKm: String(next?.distanceKm || 5) });
+          }}>{missions.map(mission => <option key={mission.id} value={mission.id}>{mission.title}</option>)}</select></label>
+          <label><span>Distance ran</span><input value={runDraft.distanceKm} onChange={event => setRunDraft({ ...runDraft, distanceKm: event.target.value })} inputMode="decimal" placeholder="5" /></label>
+          <label><span>Finish time</span><input value={runDraft.time} onChange={event => setRunDraft({ ...runDraft, time: event.target.value })} placeholder="26:48" /></label>
+          <label><span>Evidence optional</span><input value={runDraft.evidence} onChange={event => setRunDraft({ ...runDraft, evidence: event.target.value })} placeholder="Screenshot, Strava link, treadmill note..." /></label>
+          <button type="submit">Log attempt</button>
+        </form>
+        {selectedMission && <div className="fitness-attempts">
+          <strong>Latest attempts</strong>
+          {selectedMission.attempts.length ? selectedMission.attempts.slice(0, 4).map(attempt => <div key={attempt.id}>
+            <span>{attempt.date}</span><p>{attempt.distanceKm}K in {formatRunTime(attempt.seconds)} {attempt.complete ? "· mission complete" : "· logged"}</p>
+          </div>) : <em>No attempts yet. First one sets the benchmark.</em>}
+        </div>}
+      </aside>
+    </div>
+  </div>;
+}
+
 function SettingsPrivacyPage({ toast, notificationSettings, setNotificationSettings, theme, setTheme }) {
   const controls = [
     { key:"privacy", title:"Privacy defaults", meta:"Maximum privacy", Icon:Lock, description:"Choose what is visible by default across goals, progress, achievements, projects and profile details." },
@@ -1733,6 +1904,8 @@ export default function App() {
           ? <SimpleGoalsHabitsPage toast={toast}/>
         : active === "Schedule"
           ? <SchedulePage toast={toast}/>
+        : active === "Fitness"
+          ? <FitnessPage toast={toast}/>
         : ["Network","Messages","Projects"].includes(active)
           ? <DeepWorkPage key={active} name={active} toast={toast} notificationSettings={notificationSettings} setNotificationSettings={setNotificationSettings}/>
         : active === "Library"
