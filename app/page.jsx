@@ -4,17 +4,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import {
   Activity, AlertTriangle, Archive, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmark,
-  CalendarDays, Check, CheckCircle2,
+  CalendarDays, Check, CheckCircle2, Award,
   ChevronDown, ChevronRight, Circle, Clock3, Dumbbell, Flag, FolderKanban, Goal, Heart,
   LayoutDashboard, Leaf, ListChecks, Lock, LogOut, Menu, MessageCircle, MoreHorizontal,
-  Palette, Plus, Search, Settings, ShieldCheck, Sparkles, Target, Timer, TrendingUp, Users, X
+  Palette, Plus, Search, Settings, ShieldCheck, Sparkles, Star, Target, Timer, TrendingUp, Users, X
 } from "lucide-react";
 import { libraryCategories, libraryContent, libraryStats } from "./libraryContent";
 
 const nav = [
   ["Today", LayoutDashboard], ["Goals & habits", Target], ["Network", Users],
   ["Messages", MessageCircle], ["Projects", FolderKanban], ["Fitness", Dumbbell], ["Schedule", CalendarDays],
-  ["Library", BookOpen],
+  ["Library", BookOpen], ["Ranks", Award],
 ];
 
 const goals = [];
@@ -76,6 +76,7 @@ const pages = {
   Fitness: { eyebrow: "PHYSICAL STANDARD", title: "Fitness missions", text: "Set measurable targets, log attempts, prove progress and complete missions without guessing percentages." },
   Schedule: { eyebrow: "THE WEEK AHEAD", title: "Schedule", text: "Personal reminders, group calls and targeted accountability without the noise." },
   Library: { eyebrow: "COLLECTIVE PLAYBOOK", title: "Knowledge base", text: "Frameworks, lessons and proven practices collected by the network." },
+  Ranks: { eyebrow: "EARNED ACCESS", title: "Ranks & permissions", text: "See what unlocks as members prove consistency, useful contribution and trust inside Motion Only." },
   Admin: { eyebrow: "OPERATIONS", title: "Network operations", text: "Protect the standard. Manage access, rooms, roles and network integrity." },
   Settings: { eyebrow: "YOUR CONTROL", title: "Settings & privacy", text: "Control what you share, where you appear and how Motion Only keeps you informed." },
 };
@@ -1526,6 +1527,122 @@ function FitnessPage({ toast }) {
   </div>;
 }
 
+const rankLadder = [
+  {
+    rank: "Entry",
+    level: 1,
+    exp: "0 EXP",
+    pace: "1 message every 5 minutes",
+    principle: "Learn the standards before adding noise.",
+    unlocks: ["Read all public network rooms", "Create private goals, habits and fitness missions", "React to posts and save library guides"],
+  },
+  {
+    rank: "Mover",
+    level: 3,
+    exp: "500 EXP",
+    pace: "1 message every 3 minutes",
+    principle: "Shows up consistently and contributes without needing attention.",
+    unlocks: ["Post normally in core rooms", "Request accountability check-ins", "Join open project workspaces"],
+  },
+  {
+    rank: "Operator",
+    level: 6,
+    exp: "1,500 EXP",
+    pace: "1 message every 90 seconds",
+    principle: "Can be trusted to help the room move forward.",
+    unlocks: ["Create accountability threads", "Suggest library additions", "Nominate one new invite for admin approval"],
+  },
+  {
+    rank: "Builder",
+    level: 10,
+    exp: "3,500 EXP",
+    pace: "1 message every 45 seconds",
+    principle: "Turns ideas into useful work with other members.",
+    unlocks: ["Start project workspaces", "Post skill requests for projects", "Pin project updates and organise project media"],
+  },
+  {
+    rank: "Contributor",
+    level: 15,
+    exp: "7,000 EXP",
+    pace: "Standard chat access",
+    principle: "Creates material that helps others execute better.",
+    unlocks: ["Submit courses or guides for review", "Host private study/work sessions", "Create templates for business, fitness or trading journals"],
+  },
+  {
+    rank: "Analyst",
+    level: 22,
+    exp: "13,000 EXP",
+    pace: "Standard chat access",
+    principle: "Has proven discipline before discussing higher-risk markets.",
+    unlocks: ["Post educational trading setup reviews", "Lead market review rooms with risk rules", "Share analysis only with context, invalidation and disclaimers"],
+  },
+  {
+    rank: "Lead",
+    level: 30,
+    exp: "22,000 EXP",
+    pace: "Trusted access",
+    principle: "Can protect the standard and create opportunities for others.",
+    unlocks: ["Issue limited invite codes", "Open application-only projects", "Mentor lower ranks and flag moderation issues"],
+  },
+  {
+    rank: "Council",
+    level: 40,
+    exp: "38,000 EXP",
+    pace: "Leadership access",
+    principle: "Stewards the network, not just their own progress.",
+    unlocks: ["Approve courses and advanced rooms", "Help set network standards", "Review invite access and sensitive permissions with admins"],
+  },
+];
+
+function RanksPage() {
+  const currentLevel = 1;
+  const nextRank = rankLadder.find(rank => rank.level > currentLevel);
+  return <div className="ranks-page">
+    <section className="ranks-hero">
+      <div>
+        <p className="eyebrow">EARNED ACCESS</p>
+        <h1>Ranks unlock responsibility.</h1>
+        <p>EXP should not just make a number bigger. In Motion Only, ranks show trust. The more consistently someone contributes, the more permission they earn to speak, build, invite and lead.</p>
+      </div>
+      <div className="rank-current-card">
+        <span>Your current rank</span>
+        <strong>Entry</strong>
+        <p>Next unlock: {nextRank?.rank} at level {nextRank?.level}</p>
+        <i><b style={{ width: "18%" }}/></i>
+      </div>
+    </section>
+
+    <section className="rank-rules card">
+      <div><p className="eyebrow">PERMISSION MODEL</p><h2>Access follows proof.</h2><p>Ranks are earned through completed motions, verified fitness missions, useful network contributions, project updates and consistent standards. Admins can still manually restrict or promote if behaviour demands it.</p></div>
+      <div className="rank-rule-grid">
+        <span><MessageCircle size={16}/><strong>Chat speed</strong>New members move slower to reduce spam and low-value messages.</span>
+        <span><ShieldCheck size={16}/><strong>Trust unlocks</strong>Invites, courses, projects and specialist rooms require proven consistency.</span>
+        <span><AlertTriangle size={16}/><strong>Trading safety</strong>Higher ranks can share education and setup analysis, not reckless guaranteed calls.</span>
+      </div>
+    </section>
+
+    <section className="rank-timeline">
+      {rankLadder.map((rank, index) => <article className={index === 0 ? "current" : ""} key={rank.rank}>
+        <div className="rank-marker"><Star size={17}/><span>{String(index + 1).padStart(2, "0")}</span></div>
+        <div className="rank-card">
+          <header>
+            <div><p className="eyebrow">LEVEL {rank.level} · {rank.exp}</p><h2>{rank.rank}</h2><span>{rank.principle}</span></div>
+            <strong>{rank.pace}</strong>
+          </header>
+          <div className="rank-unlocks">
+            {rank.unlocks.map(unlock => <span key={unlock}><CheckCircle2 size={14}/>{unlock}</span>)}
+          </div>
+        </div>
+      </article>)}
+    </section>
+
+    <section className="rank-note">
+      <Lock size={16}/>
+      <p><strong>Important:</strong> rank unlocks should be automatic where possible, but sensitive permissions like invites, courses, trading education rooms and leadership powers should still be reviewable by admins. That keeps the network exclusive without letting the system get abused.</p>
+    </section>
+  </div>;
+}
+
 function SettingsPrivacyPage({ toast, notificationSettings, setNotificationSettings, theme, setTheme }) {
   const controls = [
     { key:"privacy", title:"Privacy defaults", meta:"Maximum privacy", Icon:Lock, description:"Choose what is visible by default across goals, progress, achievements, projects and profile details." },
@@ -1910,6 +2027,8 @@ export default function App() {
           ? <DeepWorkPage key={active} name={active} toast={toast} notificationSettings={notificationSettings} setNotificationSettings={setNotificationSettings}/>
         : active === "Library"
           ? <LibraryPage toast={toast}/>
+        : active === "Ranks"
+          ? <RanksPage/>
         : active === "Admin"
           ? <OperationsPage toast={toast}/>
         : active === "Settings"
