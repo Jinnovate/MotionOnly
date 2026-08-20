@@ -69,7 +69,7 @@ async function apiRequest(path, { apiBase, token, ...options } = {}) {
 }
 
 const pages = {
-  "Goals & habits": { eyebrow: "MOMENTUM SYSTEM", title: "Goals & standards", text: "Choose the direction. Build the rhythm. Keep moving when motivation disappears." },
+  "Goals & habits": { eyebrow: "PROGRESS SYSTEM", title: "Goals & standards", text: "Choose the direction. Build the rhythm. Keep moving when motivation disappears." },
   Network: { eyebrow: "THE NETWORK", title: "Network rooms", text: "High-trust conversations with people who sharpen your thinking and widen what is possible." },
   Messages: { eyebrow: "PRIVATE CHANNELS", title: "Direct messages", text: "Private conversations for honest feedback, useful introductions and real accountability." },
   Projects: { eyebrow: "BUILD TOGETHER", title: "Project workspaces", text: "Invitation-only teams for turning ideas into work that moves." },
@@ -122,7 +122,7 @@ function Sidebar({ active, setActive, open, setOpen, currentUser, onLogout, real
           </button>
           <button className="close-mobile" onClick={() => setOpen(false)}><X size={20}/></button>
         </div>
-        <p className="nav-label">YOUR MOMENTUM</p>
+        <p className="nav-label">MAIN MENU</p>
         <nav>
           {nav.map(([label, Icon, badge]) => (
             <button key={label} className={active === label ? "active" : ""} onClick={() => {setActive(label);setOpen(false)}}>
@@ -249,10 +249,6 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
   const levelSize = 250;
   const currentLevel = Math.floor(baseExp / levelSize) + 1;
   const levelExp = baseExp % levelSize;
-  const momentumTarget = 100;
-  const momentumPoints = Math.min(completedMotions * 25 + completed * 10, momentumTarget);
-  const momentumPercent = Math.round((momentumPoints / momentumTarget) * 100);
-  const momentumBonus = momentumPoints >= momentumTarget ? 50 : 0;
   const startPanel = (type) => {
     setDraft("");
     setFocus("Business");
@@ -296,17 +292,17 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
   return (
     <>
       <section className="welcome">
-        <div><p className="eyebrow">{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }).toUpperCase()} · TODAY'S MOTION</p><h1>Momentum is earned.</h1><p>Move with intent. Build with others. Keep the promise.</p></div>
+        <div><p className="eyebrow">{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }).toUpperCase()} · TODAY'S MOTION</p><h1>Progress is earned.</h1><p>Move with intent. Build with others. Keep the promise.</p></div>
       </section>
       <section className="motion-rules card">
-        <div><p className="eyebrow">HOW PROGRESS IS SCORED</p><h2>No guessed percentages. Only evidence.</h2><p>Complete clear actions to earn permanent EXP and weekly Momentum. Momentum resets at the end of the week; EXP stays with your account.</p></div>
+        <div><p className="eyebrow">HOW PROGRESS IS SCORED</p><h2>No guessed percentages. Only evidence.</h2><p>Complete clear actions to earn EXP. No separate points system, no confusing progress percentages.</p></div>
         <div className="rule-grid">
           <span><strong>+25 EXP</strong>Completed daily move</span>
           <span><strong>+10 EXP</strong>Daily standard checked</span>
           <span><strong>+5 EXP</strong>Qualified network contribution</span>
           <span><strong>+10 EXP</strong>Useful project update</span>
-          <span><strong>100 pts</strong>Weekly Momentum target</span>
-          <span><strong>+50 EXP</strong>Momentum bonus when the bar is filled</span>
+          <span><strong>EXP</strong>One simple progress currency</span>
+          <span><strong>Evidence</strong>Progress must be logged or completed</span>
         </div>
       </section>
       <form className="today-panel motion-entry" onSubmit={saveNewMove}>
@@ -394,9 +390,9 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
             <button className="add-habit" onClick={() => startPanel("habit")}><Plus size={15}/> Add a discipline</button>
           </section>
           <section className="card pulse">
-            <p className="eyebrow">MOMENTUM INDEX</p><div className="pulse-top"><div className="ring" style={{background:`conic-gradient(var(--gold) 0 ${momentumPercent}%,#303639 ${momentumPercent}%)`}}><span>{momentumPoints}<small>/100</small></span></div><div><h3>{momentumPoints >= momentumTarget ? "Bonus locked." : "Build the week."}</h3><p>{momentumPoints >= momentumTarget ? `+${momentumBonus} EXP weekly bonus ready` : `${momentumTarget - momentumPoints} pts to weekly bonus`}</p></div></div>
-            <div className="stat-row"><span>Level<strong>{currentLevel} <small>{levelExp}/{levelSize} EXP</small></strong></span><span>Momentum<strong>{momentumPoints} <small>/ {momentumTarget}</small></strong></span></div>
-            <button className="soft-btn" onClick={() => setActive("Goals & habits")}>Open weekly debrief <ChevronRight size={15}/></button>
+            <p className="eyebrow">EXP PROGRESS</p><div className="pulse-top"><div className="ring" style={{background:`conic-gradient(var(--gold) 0 ${Math.round((levelExp / levelSize) * 100)}%,#303639 ${Math.round((levelExp / levelSize) * 100)}%)`}}><span>{levelExp}<small>/{levelSize}</small></span></div><div><h3>Level {currentLevel}</h3><p>{levelSize - levelExp} EXP to next level</p></div></div>
+            <div className="stat-row"><span>Level<strong>{currentLevel} <small>Current rank</small></strong></span><span>EXP<strong>{levelExp} <small>/ {levelSize}</small></strong></span></div>
+            <button className="soft-btn" onClick={() => setActive("Ranks")}>View rank unlocks <ChevronRight size={15}/></button>
           </section>
         </aside>
       </div>
@@ -783,7 +779,7 @@ function SchedulePage({ toast }) {
           <p className="eyebrow">{creating === "personal" ? "PRIVATE REMINDER" : "ADMIN SCHEDULE"}</p>
           <h2>{creating === "personal" ? "Set a reminder" : "Set a group or targeted item"}</h2>
         </div>
-        <input value={draft.title} onChange={event => setDraft({ ...draft, title: event.target.value })} autoFocus placeholder={creating === "personal" ? "Example: Review weekly Momentum" : "Example: Group call"} />
+        <input value={draft.title} onChange={event => setDraft({ ...draft, title: event.target.value })} autoFocus placeholder={creating === "personal" ? "Example: Review weekly progress" : "Example: Group call"} />
         <input type="date" value={draft.date} onChange={event => setDraft({ ...draft, date: event.target.value })} />
         <input type="time" value={draft.time} onChange={event => setDraft({ ...draft, time: event.target.value })} />
         <select value={draft.target} onChange={event => setDraft({ ...draft, target: event.target.value })}>
@@ -879,11 +875,11 @@ function evaluateContribution(text = "", sectionName = "Network", existingMessag
   if (wordCount < 8) return { eligible: false, exp: 0, label: "No EXP", reason: "Too short. Add context, a question, a lesson, or a next step." };
   if (mostlyEmojiOrSymbols || linkOnly) return { eligible: false, exp: 0, label: "No EXP", reason: "Links or reactions need useful context before they count." };
   if (exactLowValue) return { eligible: false, exp: 0, label: "No EXP", reason: "This looks like a low-value reaction, not a contribution." };
-  if (repeated) return { eligible: false, exp: 0, label: "No EXP", reason: "Repeated or copied messages do not earn Momentum." };
+  if (repeated) return { eligible: false, exp: 0, label: "No EXP", reason: "Repeated or copied messages do not earn EXP." };
 
   const signal = hasMeaningfulSignal(trimmed, sectionName);
   if (sectionName === "Projects" && signal) return { eligible: true, exp: 10, label: "+10 EXP eligible", reason: "Project update has useful context or a next step." };
-  if (signal) return { eligible: true, exp: 5, label: "+5 EXP eligible", reason: "Contribution appears useful enough to earn chat Momentum." };
+  if (signal) return { eligible: true, exp: 5, label: "+5 EXP eligible", reason: "Contribution appears useful enough to earn chat EXP." };
   return { eligible: false, exp: 0, label: "Needs signal", reason: "Long enough, but add a question, result, lesson, blocker, decision, or next step." };
 }
 
@@ -1382,7 +1378,6 @@ function FitnessPage({ toast }) {
       distanceKm: 5,
       targetSeconds: 27 * 60,
       exp: 120,
-      momentum: 35,
       status: "active",
       attempts: [],
     },
@@ -1391,7 +1386,6 @@ function FitnessPage({ toast }) {
   const [runDraft, setRunDraft] = useState({ missionId: 1, distanceKm: "5", time: "", evidence: "" });
   const completedMissions = missions.filter(mission => mission.status === "complete").length;
   const earnedExp = missions.filter(mission => mission.status === "complete").reduce((sum, mission) => sum + mission.exp, 0);
-  const earnedMomentum = missions.filter(mission => mission.status === "complete").reduce((sum, mission) => sum + mission.momentum, 0);
 
   const addMission = (event) => {
     event.preventDefault();
@@ -1405,7 +1399,6 @@ function FitnessPage({ toast }) {
       distanceKm: distance,
       targetSeconds,
       exp: 120,
-      momentum: 35,
       status: "active",
       attempts: [],
     };
@@ -1451,7 +1444,7 @@ function FitnessPage({ toast }) {
       <div className="fitness-score">
         <span><strong>{completedMissions}</strong>Missions complete</span>
         <span><strong>{earnedExp}</strong>Fitness EXP</span>
-        <span><strong>{earnedMomentum}</strong>Momentum earned</span>
+        <span><strong>{earnedExp}</strong>Total EXP earned</span>
       </div>
     </section>
 
@@ -1656,7 +1649,7 @@ const marketBriefs = [
   {
     id: 2,
     tag: "US STOCKS",
-    title: "Large-cap tech: momentum still needs earnings confirmation",
+    title: "Large-cap tech: trend strength still needs earnings confirmation",
     summary: "Price strength means more when revenue, margins and guidance support it. The useful question is not just 'is it up?' but 'what would invalidate the move?'",
     impact: "Useful for members tracking growth stocks without chasing candles.",
     time: "Market theme",
@@ -1928,7 +1921,7 @@ function AuthGate({ apiBase, supabase, onSession }) {
         <div><strong>MOTION <b>ONLY</b></strong><span>CONNECT · BUILD · ADVANCE</span></div>
       </div>
       <p className="eyebrow">PRIVATE MEMBERSHIP</p>
-      <h1>Momentum starts here.</h1>
+      <h1>Progress starts here.</h1>
       <p>A private network for business, trading and fitness progress. Free membership, invite-only access, private by default.</p>
       <div className="auth-proof">
         <span><Lock size={15}/> Single-use invites</span>
