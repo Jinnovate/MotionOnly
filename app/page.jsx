@@ -14,7 +14,7 @@ import { libraryCategories, libraryContent, libraryStats } from "./libraryConten
 const nav = [
   ["Today", LayoutDashboard], ["Goals & habits", Target], ["Network", Users],
   ["Messages", MessageCircle], ["Projects", FolderKanban], ["Fitness", Dumbbell], ["Schedule", CalendarDays],
-  ["Library", BookOpen], ["Market News", Newspaper], ["Ranks", Award],
+  ["Library", BookOpen], ["Consistency Hub", ListChecks], ["Market News", Newspaper], ["Ranks", Award],
 ];
 
 const goals = [];
@@ -76,6 +76,7 @@ const pages = {
   Fitness: { eyebrow: "PHYSICAL STANDARD", title: "Fitness missions", text: "Set measurable targets, log attempts, prove progress and complete missions without guessing percentages." },
   Schedule: { eyebrow: "THE WEEK AHEAD", title: "Schedule", text: "Personal reminders, group calls and targeted accountability without the noise." },
   Library: { eyebrow: "COLLECTIVE PLAYBOOK", title: "Knowledge base", text: "Frameworks, lessons and proven practices collected by the network." },
+  "Consistency Hub": { eyebrow: "THE CONSISTENCY HUB", title: "Consistency system", text: "A clean place to track discipline, learning, risk and execution without turning progress into clutter." },
   "Market News": { eyebrow: "MARKET INTELLIGENCE", title: "Stocks & shares news", text: "A clean market digest for stocks, shares and investing themes without clutter or hype." },
   Ranks: { eyebrow: "EARNED ACCESS", title: "Ranks & permissions", text: "See what unlocks as members prove consistency, useful contribution and trust inside Motion Only." },
   Admin: { eyebrow: "OPERATIONS", title: "Network operations", text: "Protect the standard. Manage access, rooms, roles and network integrity." },
@@ -1742,6 +1743,78 @@ function MarketNewsPage({ toast }) {
   </div>;
 }
 
+const consistencyPillars = [
+  ["Plan", "Choose the one move that matters today before noise gets a vote.", Target],
+  ["Execute", "Complete the work, log the proof, and keep the standard objective.", CheckCircle2],
+  ["Review", "Look at what actually happened and adjust the next session.", Search],
+  ["Protect", "Keep risk, recovery and attention inside clear limits.", ShieldCheck],
+];
+
+const consistencyItems = [
+  { label: "Today", title: "Primary move set", note: "One clear action selected for the day.", status: "Ready" },
+  { label: "Trading", title: "Pre-market checklist", note: "Bias, levels, risk and invalidation defined before entry.", status: "Due" },
+  { label: "Fitness", title: "Physical standard", note: "Run, lift or recovery session logged as evidence.", status: "Open" },
+  { label: "Learning", title: "Course progress", note: "One lesson or practical review completed this week.", status: "48%" },
+];
+
+function ConsistencyHubPage({ toast, setActive }) {
+  return <div className="consistency-page">
+    <section className="consistency-hero">
+      <div>
+        <p className="eyebrow">THE CONSISTENCY HUB</p>
+        <h1>Consistency is the edge.</h1>
+        <p>A clean operating view for daily execution: plan the move, do the work, log the proof, review the pattern. No clutter, no hype, no second points system.</p>
+        <div className="consistency-actions">
+          <button className="primary" onClick={() => setActive("Today")}><ArrowUpRight size={15}/> Set today&apos;s move</button>
+          <button className="soft-btn" onClick={() => setActive("Goals & habits")}>Review goals <ChevronRight size={15}/></button>
+        </div>
+      </div>
+      <div className="consistency-terminal">
+        <div className="terminal-head"><span>MO / CONSISTENCY</span><i>Live</i></div>
+        <strong>Process before outcome.</strong>
+        <div className="terminal-line"><span>Daily move</span><b>Pending proof</b></div>
+        <div className="terminal-line"><span>Risk rule</span><b>Defined before action</b></div>
+        <div className="terminal-line"><span>Review</span><b>End of day</b></div>
+        <svg viewBox="0 0 320 110" className="consistency-chart" aria-hidden="true">
+          <path d="M4 90 L56 72 L96 80 L146 42 L196 58 L248 27 L316 18"/>
+          <circle cx="146" cy="42" r="4"/>
+          <circle cx="316" cy="18" r="4"/>
+        </svg>
+      </div>
+    </section>
+
+    <section className="consistency-pillars">
+      {consistencyPillars.map(([title, text, Icon]) => <article key={title}>
+        <span><Icon size={18}/></span>
+        <h2>{title}</h2>
+        <p>{text}</p>
+      </article>)}
+    </section>
+
+    <div className="consistency-layout">
+      <main className="consistency-panel card">
+        <div className="section-head"><div><p className="eyebrow">EXECUTION BOARD</p><h2>Keep the day clean</h2></div></div>
+        {consistencyItems.map(item => <button className="consistency-row" key={item.title} onClick={() => toast(`${item.title} opened.`)}>
+          <span><small>{item.label}</small><strong>{item.title}</strong><em>{item.note}</em></span>
+          <b>{item.status}</b>
+          <ChevronRight size={16}/>
+        </button>)}
+      </main>
+      <aside className="consistency-side">
+        <section className="card consistency-rule">
+          <p className="eyebrow">THE RULE</p>
+          <h2>Logged proof beats good intentions.</h2>
+          <p>If a member cannot say what was done, when it was done, and what evidence exists, it does not count as completed.</p>
+        </section>
+        <section className="card consistency-checklist">
+          <p className="eyebrow">DAILY CHECK</p>
+          {["What is the one move?", "What would make it complete?", "What is the risk or obstacle?", "What proof will be logged?"].map((item, index) => <span key={item}><i>{index + 1}</i>{item}</span>)}
+        </section>
+      </aside>
+    </div>
+  </div>;
+}
+
 function SettingsPrivacyPage({ toast, notificationSettings, setNotificationSettings, theme, setTheme }) {
   const controls = [
     { key:"privacy", title:"Privacy defaults", meta:"Maximum privacy", Icon:Lock, description:"Choose what is visible by default across goals, progress, achievements, projects and profile details." },
@@ -2126,6 +2199,8 @@ export default function App() {
           ? <DeepWorkPage key={active} name={active} toast={toast} notificationSettings={notificationSettings} setNotificationSettings={setNotificationSettings}/>
         : active === "Library"
           ? <LibraryPage toast={toast}/>
+        : active === "Consistency Hub"
+          ? <ConsistencyHubPage toast={toast} setActive={setActive}/>
         : active === "Market News"
           ? <MarketNewsPage toast={toast}/>
         : active === "Ranks"
