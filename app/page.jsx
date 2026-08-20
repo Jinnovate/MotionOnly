@@ -7,14 +7,14 @@ import {
   CalendarDays, Check, CheckCircle2, Award,
   ChevronDown, ChevronRight, Circle, Clock3, Dumbbell, Flag, FolderKanban, Goal, Heart,
   LayoutDashboard, Leaf, ListChecks, Lock, LogOut, Menu, MessageCircle, MoreHorizontal,
-  Palette, Plus, Search, Settings, ShieldCheck, Sparkles, Star, Target, Timer, TrendingUp, Users, X
+  Newspaper, Palette, Plus, Search, Settings, ShieldCheck, Sparkles, Star, Target, Timer, TrendingUp, Users, X
 } from "lucide-react";
 import { libraryCategories, libraryContent, libraryStats } from "./libraryContent";
 
 const nav = [
   ["Today", LayoutDashboard], ["Goals & habits", Target], ["Network", Users],
   ["Messages", MessageCircle], ["Projects", FolderKanban], ["Fitness", Dumbbell], ["Schedule", CalendarDays],
-  ["Library", BookOpen], ["Ranks", Award],
+  ["Library", BookOpen], ["Market News", Newspaper], ["Ranks", Award],
 ];
 
 const goals = [];
@@ -76,6 +76,7 @@ const pages = {
   Fitness: { eyebrow: "PHYSICAL STANDARD", title: "Fitness missions", text: "Set measurable targets, log attempts, prove progress and complete missions without guessing percentages." },
   Schedule: { eyebrow: "THE WEEK AHEAD", title: "Schedule", text: "Personal reminders, group calls and targeted accountability without the noise." },
   Library: { eyebrow: "COLLECTIVE PLAYBOOK", title: "Knowledge base", text: "Frameworks, lessons and proven practices collected by the network." },
+  "Market News": { eyebrow: "MARKET INTELLIGENCE", title: "Stocks & shares news", text: "A clean market digest for stocks, shares and investing themes without clutter or hype." },
   Ranks: { eyebrow: "EARNED ACCESS", title: "Ranks & permissions", text: "See what unlocks as members prove consistency, useful contribution and trust inside Motion Only." },
   Admin: { eyebrow: "OPERATIONS", title: "Network operations", text: "Protect the standard. Manage access, rooms, roles and network integrity." },
   Settings: { eyebrow: "YOUR CONTROL", title: "Settings & privacy", text: "Control what you share, where you appear and how Motion Only keeps you informed." },
@@ -1643,6 +1644,111 @@ function RanksPage() {
   </div>;
 }
 
+const marketBriefs = [
+  {
+    id: 1,
+    tag: "UK MARKET",
+    title: "FTSE watchlist: banks, miners and energy remain the key movers",
+    summary: "Track sector strength first. For UK shares, avoid reacting to one headline until you understand whether the move is market-wide, sector-wide or company-specific.",
+    impact: "Good for building a cleaner watchlist before looking at individual stocks.",
+    time: "Morning brief",
+  },
+  {
+    id: 2,
+    tag: "US STOCKS",
+    title: "Large-cap tech: momentum still needs earnings confirmation",
+    summary: "Price strength means more when revenue, margins and guidance support it. The useful question is not just 'is it up?' but 'what would invalidate the move?'",
+    impact: "Useful for members tracking growth stocks without chasing candles.",
+    time: "Market theme",
+  },
+  {
+    id: 3,
+    tag: "RISK",
+    title: "Rates and inflation data remain major portfolio drivers",
+    summary: "Before adding exposure, check whether the next economic release could change the wider risk mood. Position size matters more when macro events are close.",
+    impact: "Helps members avoid taking unnecessary risk before scheduled news.",
+    time: "Macro note",
+  },
+];
+
+const marketWatchAreas = [
+  ["FTSE 100", "UK large caps", "Watch banks, miners, energy and defensives"],
+  ["S&P 500", "US benchmark", "Check breadth, not only mega-cap movement"],
+  ["NASDAQ", "Growth / tech", "Treat hype carefully around earnings"],
+  ["Commodities", "Gold / oil", "Useful for inflation and risk sentiment"],
+];
+
+function MarketNewsPage({ toast }) {
+  const [filter, setFilter] = useState("All");
+  const filters = ["All", "UK market", "US stocks", "Risk"];
+  const visibleBriefs = filter === "All"
+    ? marketBriefs
+    : marketBriefs.filter(item => item.tag.toLowerCase() === filter.toLowerCase());
+
+  return <div className="market-page">
+    <section className="market-hero">
+      <div>
+        <p className="eyebrow">MARKET INTELLIGENCE</p>
+        <h1>Stocks without the noise.</h1>
+        <p>A simple portal for stocks, shares and investing themes. Built to help members read the market, manage risk and avoid headline-chasing.</p>
+      </div>
+      <div className="market-digest-card">
+        <span>Today&apos;s format</span>
+        <strong>Brief. Context. Risk.</strong>
+        <p>No crowded feed. No profit bait. Each item should explain what happened, why it matters and what to watch next.</p>
+      </div>
+    </section>
+
+    <section className="market-policy card">
+      <AlertTriangle size={19}/>
+      <div>
+        <strong>Information only</strong>
+        <p>This area is for market news, education and watchlist context. It should not be used for guaranteed returns, pressure to buy, or blind copy-trading.</p>
+      </div>
+    </section>
+
+    <div className="market-tabs">
+      {filters.map(item => <button className={filter === item ? "active" : ""} key={item} onClick={() => setFilter(item)}>{item}</button>)}
+    </div>
+
+    <div className="market-layout">
+      <main className="market-feed">
+        {visibleBriefs.map(item => <article className="market-card" key={item.id}>
+          <header>
+            <span>{item.tag}</span>
+            <small>{item.time}</small>
+          </header>
+          <h2>{item.title}</h2>
+          <p>{item.summary}</p>
+          <div className="market-impact">
+            <strong>Why it matters</strong>
+            <span>{item.impact}</span>
+          </div>
+          <div className="market-actions">
+            <button onClick={() => toast("Saved to market watchlist.")}><Bookmark size={14}/> Save</button>
+            <button onClick={() => toast("Discussion prompt opened.")}><MessageCircle size={14}/> Discuss</button>
+          </div>
+        </article>)}
+      </main>
+
+      <aside className="market-side">
+        <section className="market-watch card">
+          <p className="eyebrow">WATCH AREAS</p>
+          <h2>Clean watchlist</h2>
+          {marketWatchAreas.map(([name, type, note]) => <button key={name} onClick={() => toast(`${name} opened.`)}>
+            <span><strong>{name}</strong><small>{type}</small></span>
+            <em>{note}</em>
+          </button>)}
+        </section>
+        <section className="market-checklist card">
+          <p className="eyebrow">BEFORE YOU ACT</p>
+          {["What changed?", "Is it confirmed by data?", "Where is the invalidation?", "What is the risk if wrong?"].map((item, index) => <span key={item}><i>{index + 1}</i>{item}</span>)}
+        </section>
+      </aside>
+    </div>
+  </div>;
+}
+
 function SettingsPrivacyPage({ toast, notificationSettings, setNotificationSettings, theme, setTheme }) {
   const controls = [
     { key:"privacy", title:"Privacy defaults", meta:"Maximum privacy", Icon:Lock, description:"Choose what is visible by default across goals, progress, achievements, projects and profile details." },
@@ -2027,6 +2133,8 @@ export default function App() {
           ? <DeepWorkPage key={active} name={active} toast={toast} notificationSettings={notificationSettings} setNotificationSettings={setNotificationSettings}/>
         : active === "Library"
           ? <LibraryPage toast={toast}/>
+        : active === "Market News"
+          ? <MarketNewsPage toast={toast}/>
         : active === "Ranks"
           ? <RanksPage/>
         : active === "Admin"
