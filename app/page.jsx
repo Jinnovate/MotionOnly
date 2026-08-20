@@ -5,9 +5,9 @@ import { createClient } from "@supabase/supabase-js";
 import {
   Activity, AlertTriangle, Archive, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmark,
   CalendarDays, Check, CheckCircle2, Award,
-  ChevronDown, ChevronRight, Circle, Clock3, Dumbbell, Flag, FolderKanban, Goal, Heart,
+  Bot, ChevronDown, ChevronRight, Circle, Clock3, Copy, CreditCard, Download, Dumbbell, ExternalLink, Flag, FolderKanban, Gauge, Goal, GraduationCap, Heart,
   LayoutDashboard, Leaf, ListChecks, Lock, LogOut, Menu, MessageCircle, MoreHorizontal,
-  Newspaper, Palette, Plus, Search, Settings, ShieldCheck, Sparkles, Star, Target, Timer, TrendingUp, Users, X
+  Newspaper, Palette, Pause, Play, Plus, Search, Settings, ShieldCheck, SlidersHorizontal, Sparkles, Star, Target, Timer, TrendingUp, UserRound, Users, Wallet, X, Zap
 } from "lucide-react";
 import { libraryCategories, libraryContent, libraryStats } from "./libraryContent";
 
@@ -1743,38 +1743,57 @@ function MarketNewsPage({ toast }) {
   </div>;
 }
 
-const consistencyPillars = [
-  ["Plan", "Choose the one move that matters today before noise gets a vote.", Target],
-  ["Execute", "Complete the work, log the proof, and keep the standard objective.", CheckCircle2],
-  ["Review", "Look at what actually happened and adjust the next session.", Search],
-  ["Protect", "Keep risk, recovery and attention inside clear limits.", ShieldCheck],
+const tchSignals = [
+  { market: "EUR / USD", direction: "BUY", price: "1.0842", stop: "1.0788", target: "1.0910", confidence: 86, type: "Forex", change: "+0.62%" },
+  { market: "XAU / USD", direction: "BUY", price: "2,391.40", stop: "2,372.00", target: "2,428.00", confidence: 81, type: "Metal", change: "+1.14%" },
+  { market: "GBP / JPY", direction: "SELL", price: "195.28", stop: "196.10", target: "193.90", confidence: 74, type: "Forex", change: "-0.38%" },
+  { market: "NAS 100", direction: "BUY", price: "23,184", stop: "22,940", target: "23,420", confidence: 78, type: "Index", change: "+0.44%" },
 ];
 
-const consistencyItems = [
-  { label: "Today", title: "Primary move set", note: "One clear action selected for the day.", status: "Ready" },
-  { label: "Trading", title: "Pre-market checklist", note: "Bias, levels, risk and invalidation defined before entry.", status: "Due" },
-  { label: "Fitness", title: "Physical standard", note: "Run, lift or recovery session logged as evidence.", status: "Open" },
-  { label: "Learning", title: "Course progress", note: "One lesson or practical review completed this week.", status: "48%" },
+const tchCourses = [
+  { tag: "FOUNDATIONS", title: "Market structure", lessons: 12, progress: 68, note: "Reading control, direction and levels before planning an entry." },
+  { tag: "EXECUTION", title: "Entries & confirmations", lessons: 9, progress: 32, note: "Turning a market idea into a rule-based trade plan." },
+  { tag: "RISK", title: "Capital preservation", lessons: 10, progress: 10, note: "Position sizing, invalidation and when not to trade." },
+  { tag: "MINDSET", title: "Trading psychology", lessons: 8, progress: 0, note: "Avoiding revenge trades, FOMO and emotional execution." },
 ];
 
-function ConsistencyHubPage({ toast, setActive }) {
-  return <div className="consistency-page">
+function ConsistencyMetric({ label, value, note, icon: Icon }) {
+  return <div className="tch-metric"><span><Icon size={17}/></span><small>{label}</small><strong>{value}</strong><em>{note}</em></div>;
+}
+
+function ConsistencyHubPage({ toast }) {
+  const [section, setSection] = useState("Overview");
+  const [signalFilter, setSignalFilter] = useState("All");
+  const [selectedSignal, setSelectedSignal] = useState(null);
+  const [copyActive, setCopyActive] = useState(true);
+  const [risk, setRisk] = useState(1);
+  const [accountTab, setAccountTab] = useState("Profile");
+  const filteredSignals = signalFilter === "All" ? tchSignals : tchSignals.filter(signal => signal.type === signalFilter);
+  const tabs = [
+    ["Overview", LayoutDashboard],
+    ["Signals", TrendingUp],
+    ["Academy", GraduationCap],
+    ["Copy Trading", Copy],
+    ["Account", UserRound],
+  ];
+
+  return <div className="consistency-page full-hub">
     <section className="consistency-hero">
       <div>
         <p className="eyebrow">THE CONSISTENCY HUB</p>
         <h1>Consistency is the edge.</h1>
-        <p>A clean operating view for daily execution: plan the move, do the work, log the proof, review the pattern. No clutter, no hype, no second points system.</p>
+        <p>A trading mentorship area inside Motion Only: education, trade context, risk controls, copy-trading concepts and account preferences in one clean hub.</p>
         <div className="consistency-actions">
-          <button className="primary" onClick={() => setActive("Today")}><ArrowUpRight size={15}/> Set today&apos;s move</button>
-          <button className="soft-btn" onClick={() => setActive("Goals & habits")}>Review goals <ChevronRight size={15}/></button>
+          <button className="primary" onClick={() => setSection("Signals")}><ArrowUpRight size={15}/> View signals</button>
+          <button className="soft-btn" onClick={() => setSection("Academy")}>Open academy <ChevronRight size={15}/></button>
         </div>
       </div>
       <div className="consistency-terminal">
-        <div className="terminal-head"><span>MO / CONSISTENCY</span><i>Live</i></div>
-        <strong>Process before outcome.</strong>
-        <div className="terminal-line"><span>Daily move</span><b>Pending proof</b></div>
-        <div className="terminal-line"><span>Risk rule</span><b>Defined before action</b></div>
-        <div className="terminal-line"><span>Review</span><b>End of day</b></div>
+        <div className="terminal-head"><span>MO / TCH</span><i>Mentorship</i></div>
+        <strong>Education. Signals. Execution.</strong>
+        <div className="terminal-line"><span>Risk profile</span><b>Moderate</b></div>
+        <div className="terminal-line"><span>Latest setup</span><b>EUR/USD buy idea</b></div>
+        <div className="terminal-line"><span>Next lesson</span><b>Market structure</b></div>
         <svg viewBox="0 0 320 110" className="consistency-chart" aria-hidden="true">
           <path d="M4 90 L56 72 L96 80 L146 42 L196 58 L248 27 L316 18"/>
           <circle cx="146" cy="42" r="4"/>
@@ -1783,36 +1802,62 @@ function ConsistencyHubPage({ toast, setActive }) {
       </div>
     </section>
 
-    <section className="consistency-pillars">
-      {consistencyPillars.map(([title, text, Icon]) => <article key={title}>
-        <span><Icon size={18}/></span>
-        <h2>{title}</h2>
-        <p>{text}</p>
-      </article>)}
-    </section>
+    <nav className="tch-tabs">
+      {tabs.map(([label, Icon]) => <button className={section === label ? "active" : ""} key={label} onClick={() => setSection(label)}><Icon size={15}/>{label}</button>)}
+    </nav>
 
-    <div className="consistency-layout">
-      <main className="consistency-panel card">
-        <div className="section-head"><div><p className="eyebrow">EXECUTION BOARD</p><h2>Keep the day clean</h2></div></div>
-        {consistencyItems.map(item => <button className="consistency-row" key={item.title} onClick={() => toast(`${item.title} opened.`)}>
-          <span><small>{item.label}</small><strong>{item.title}</strong><em>{item.note}</em></span>
-          <b>{item.status}</b>
-          <ChevronRight size={16}/>
-        </button>)}
-      </main>
-      <aside className="consistency-side">
-        <section className="card consistency-rule">
-          <p className="eyebrow">THE RULE</p>
-          <h2>Logged proof beats good intentions.</h2>
-          <p>If a member cannot say what was done, when it was done, and what evidence exists, it does not count as completed.</p>
+    {section === "Overview" && <>
+      <div className="tch-metrics">
+        <ConsistencyMetric icon={Wallet} label="Connected equity" value="£12,480.60" note="Demo brokerage data"/>
+        <ConsistencyMetric icon={TrendingUp} label="Month to date" value="+£1,284.20" note="Shown for prototype only"/>
+        <ConsistencyMetric icon={Copy} label="Copied trades" value="24" note="18 wins · 6 losses"/>
+        <ConsistencyMetric icon={ShieldCheck} label="Risk used" value="1.2%" note="2.0% daily limit"/>
+      </div>
+      <div className="tch-overview-grid">
+        <section className="tch-panel performance-panel">
+          <div className="panel-head"><div><small>ACCOUNT PERFORMANCE</small><h3>£12,480.60</h3></div><select><option>Last 30 days</option><option>Last 90 days</option></select></div>
+          <svg className="dash-chart" viewBox="0 0 700 230"><path className="dash-grid" d="M0 40H700M0 100H700M0 160H700M0 220H700"/><path className="dash-area" d="M0 204 C65 190 78 194 125 162 S208 184 250 142 S327 154 370 117 S452 129 505 81 S598 96 700 28 V230H0Z"/><path className="dash-line" d="M0 204 C65 190 78 194 125 162 S208 184 250 142 S327 154 370 117 S452 129 505 81 S598 96 700 28"/></svg>
+          <div className="chart-labels"><span>22 JUL</span><span>29 JUL</span><span>05 AUG</span><span>12 AUG</span><span>20 AUG</span></div>
         </section>
-        <section className="card consistency-checklist">
-          <p className="eyebrow">DAILY CHECK</p>
-          {["What is the one move?", "What would make it complete?", "What is the risk or obstacle?", "What proof will be logged?"].map((item, index) => <span key={item}><i>{index + 1}</i>{item}</span>)}
+        <section className="tch-panel activity-panel">
+          <div className="panel-head"><div><small>RECENT ACTIVITY</small><h3>Latest trades</h3></div><button onClick={() => setSection("Copy Trading")}>View all</button></div>
+          {tchSignals.slice(0, 3).map((signal, index) => <div className="trade-item" key={signal.market}><span className={`trade-side ${signal.direction.toLowerCase()}`}>{signal.direction[0]}</span><div><b>{signal.market}</b><small>{index === 0 ? "12 min ago" : index === 1 ? "2h ago" : "Yesterday"}</small></div><div><b className={index === 2 ? "loss" : "gain"}>{index === 2 ? "-£42.10" : index === 1 ? "+£187.40" : "+£64.20"}</b><small>{signal.direction} · Closed</small></div></div>)}
         </section>
-      </aside>
-    </div>
+      </div>
+      <div className="tch-lower-grid">
+        <section className="tch-panel next-lesson"><span className="eyebrow">CONTINUE LEARNING</span><h3>Reading market structure</h3><p>Module 2 · Lesson 4 of 8</p><i><b style={{width:"48%"}}/></i><button onClick={() => setSection("Academy")}><Play size={14}/> Resume lesson</button></section>
+        <section className="tch-panel system-status"><div><span className="status-pulse"/><small>AUTOMATION STATUS</small><h3>Copy system is active</h3><p>Balanced FX · Last checked just now</p></div><button onClick={() => setSection("Copy Trading")}><SlidersHorizontal size={16}/></button></section>
+      </div>
+    </>}
+
+    {section === "Signals" && <>
+      <div className="tch-title"><div><p className="eyebrow">TCH TRADE DESK</p><h2>Signals</h2><span>Owner-led trade ideas with entries, invalidation and risk context.</span></div><div className="market-status"><i/> Market open</div></div>
+      <div className="signal-toolbar"><div>{["All","Forex","Metal","Index"].map(item => <button className={signalFilter === item ? "active" : ""} onClick={() => setSignalFilter(item)} key={item}>{item}</button>)}</div><button onClick={() => toast("Signal filters opened.")}><SlidersHorizontal size={14}/> Filters</button></div>
+      <div className="signal-cards">{filteredSignals.map(signal => <article key={signal.market} className="app-signal"><div className="signal-card-top"><div className="pair-icon">{signal.market.slice(0,2)}</div><div><b>{signal.market}</b><small>{signal.type} · Educational setup</small></div><span className={`direction ${signal.direction.toLowerCase()}`}>{signal.direction}</span></div><div className="signal-prices"><div><small>Entry</small><b>{signal.price}</b></div><div><small>Stop</small><b>{signal.stop}</b></div><div><small>Target</small><b>{signal.target}</b></div></div><div className="signal-risk"><span>Confidence {signal.confidence}%</span><i><b style={{width:`${signal.confidence}%`}}/></i><span>Risk 1.0%</span></div><button onClick={() => setSelectedSignal(signal)}>View full analysis <ArrowUpRight size={14}/></button></article>)}</div>
+      {selectedSignal && <div className="modal-scrim" role="presentation" onMouseDown={() => setSelectedSignal(null)}><section className="admin-modal signal-modal" onMouseDown={event => event.stopPropagation()}><header><div><p className="eyebrow">EDUCATIONAL SETUP</p><h2>{selectedSignal.market}</h2><span>{selectedSignal.direction} setup with entry, invalidation and risk context.</span></div><button onClick={() => setSelectedSignal(null)}><X size={18}/></button></header><div className="signal-modal-body"><div className="drawer-chart"><TrendingUp size={42}/><p>Price structure chart placeholder</p></div><h3>Trade thesis</h3><p>Price has reclaimed a previous structural level and confirmed strength on the higher timeframe. The setup remains valid only while price respects the stated invalidation level.</p><div className="drawer-levels"><div><small>Entry</small><b>{selectedSignal.price}</b></div><div><small>Target</small><b>{selectedSignal.target}</b></div><div><small>Risk</small><b>1.0%</b></div></div><div className="risk-callout"><AlertTriangle size={17}/><span>This is not personal financial advice. Check suitability and size risk independently.</span></div></div></section></div>}
+    </>}
+
+    {section === "Academy" && <>
+      <div className="tch-title"><div><p className="eyebrow">TCH ACADEMY</p><h2>Your learning path</h2><span>Build a repeatable process one skill at a time.</span></div><div className="academy-total"><b>14</b><span>Lessons completed</span></div></div>
+      <section className="featured-course"><div><span className="eyebrow">CONTINUE WHERE YOU LEFT OFF</span><h2>Reading market structure</h2><p>Learn to identify control, direction and the levels that matter before planning an entry.</p><div className="feature-progress"><i><b style={{width:"48%"}}/></i><span>48% complete</span></div><button className="primary"><Play size={14}/> Continue lesson</button></div><div className="course-visual"><span>02 / 04</span><svg viewBox="0 0 300 160"><path d="M5 135L65 110 105 125 155 67 200 88 292 18"/><circle cx="155" cy="67" r="6"/><circle cx="292" cy="18" r="6"/></svg><small>Higher highs · Higher lows</small></div></section>
+      <div className="course-grid">{tchCourses.map((course, index) => <article className="academy-course" key={course.title}><div className={`course-thumb thumb-${index}`}><span>{String(index+1).padStart(2,"0")}</span><BookOpen size={23}/></div><div className="course-info"><small>{course.tag}</small><h3>{course.title}</h3><p>{course.lessons} lessons · {course.note}</p><i><b style={{width:`${course.progress}%`}}/></i><div><span>{course.progress ? `${course.progress}% complete` : "Not started"}</span><button onClick={() => toast(`${course.title} opened.`)}><ChevronRight size={16}/></button></div></div></article>)}</div>
+    </>}
+
+    {section === "Copy Trading" && <CopyTradingPanel copyActive={copyActive} setCopyActive={setCopyActive} risk={risk} setRisk={setRisk} toast={toast}/>}
+
+    {section === "Account" && <section className="tch-panel account-panel"><div className="account-tabs">{["Profile","Security","Billing","Preferences"].map(tab => <button className={accountTab === tab ? "active" : ""} onClick={() => setAccountTab(tab)} key={tab}>{tab}</button>)}</div><AccountTab tab={accountTab} toast={toast}/></section>}
   </div>;
+}
+
+function CopyTradingPanel({ copyActive, setCopyActive, risk, setRisk, toast }) {
+  return <><div className="tch-title"><div><p className="eyebrow">OWNER TRADE AUTOMATION</p><h2>Copy trading</h2><span>Mirror eligible owner trades inside strict user-defined limits.</span></div><div className={`copy-state ${copyActive ? "on" : "off"}`}><i/><span>{copyActive ? "System active" : "System paused"}</span></div></div><div className="copy-layout"><div><section className="tch-panel strategy-summary"><div className="strategy-head"><div className="strategy-mark"><TrendingUp size={22}/></div><div><small>ACTIVE STRATEGY</small><h2>Motion Core Strategy</h2><p>Owner-led · Forex, gold & indices</p></div><button className={copyActive ? "pause" : "start"} onClick={() => setCopyActive(!copyActive)}>{copyActive ? <><Pause size={15}/> Pause copying</> : <><Play size={15}/> Start copying</>}</button></div><div className="strategy-stats"><div><small>Allocation</small><b>£5,000</b></div><div><small>Open positions</small><b>{copyActive ? "3" : "0"}</b></div><div><small>This month</small><b className="gain">+£428.30</b></div><div><small>Risk mode</small><b>Balanced</b></div></div><div className="owner-note"><UserRound size={18}/><div><b>How copying works</b><p>When the owner opens an eligible strategy trade, the system calculates position size from the limits and sends it to the connected broker. Members can pause instantly.</p></div></div></section><section className="tch-panel open-trades"><div className="panel-head"><div><small>MIRRORED POSITIONS</small><h3>Open trades</h3></div><span>3 active</span></div>{tchSignals.slice(0,3).map((signal, index) => <div className="position-row" key={signal.market}><div><span className={`trade-side ${signal.direction.toLowerCase()}`}>{signal.direction[0]}</span><p><b>{signal.market}</b><small>{signal.direction} · {index + 1}.0 lots</small></p></div><div><small>Open price</small><b>{signal.price}</b></div><div><small>Live P/L</small><b className={index === 2 ? "loss" : "gain"}>{index === 2 ? "-£18.40" : index === 1 ? "+£94.20" : "+£31.80"}</b></div><button onClick={() => toast("Position opened.")}><ExternalLink size={15}/></button></div>)}</section></div><aside className="copy-settings"><section className="tch-panel broker-card"><div className="panel-head"><div><small>BROKER CONNECTION</small><h3>MetaTrader 5</h3></div><span className="connected"><i/>Connected</span></div><div className="broker-id"><span>MT</span><div><b>Demo broker</b><small>Account ···· 4821</small></div></div><button onClick={() => toast("Broker settings opened.")}>Manage connection <Settings size={14}/></button></section><section className="tch-panel limits-card"><div className="panel-head"><div><small>YOUR GUARDRAILS</small><h3>Risk limits</h3></div><ShieldCheck size={18}/></div><label>Risk per trade <b>{risk.toFixed(1)}%</b></label><input type="range" min="0.25" max="2" step="0.25" value={risk} onChange={event => setRisk(Number(event.target.value))}/><div className="range-labels"><span>0.25%</span><span>2.0%</span></div><label>Daily loss limit <b>2.0%</b></label><div className="select-look">2.0% of equity <ChevronDown size={14}/></div><label>Maximum open trades <b>4</b></label><div className="select-look">4 simultaneous trades <ChevronDown size={14}/></div><button className="primary" onClick={() => toast("Risk limits saved.")}>Save limits</button></section><div className="emergency"><AlertTriangle size={18}/><div><b>Emergency stop</b><p>Close copied positions and disable automation.</p></div><button onClick={() => toast("Emergency stop requires confirmation.")}>Stop</button></div></aside></div></>;
+}
+
+function AccountTab({ tab, toast }) {
+  if (tab === "Security") return <><div className="account-head"><div className="setting-icon"><ShieldCheck size={20}/></div><div><h2>Security</h2><p>Protect access to the mentorship area.</p></div></div>{["Password", "Two-factor authentication", "Active sessions"].map((item, index) => <div className="setting-row" key={item}><div><b>{item}</b><p>{index === 0 ? "Last changed 3 months ago" : index === 1 ? "Recommended before live trading features." : "1 session · Windows · London"}</p></div><button onClick={() => toast(`${item} opened.`)}>{index === 1 ? "Enable" : "Review"}</button></div>)}</>;
+  if (tab === "Billing") return <><div className="account-head"><div className="setting-icon"><CreditCard size={20}/></div><div><h2>Membership & billing</h2><p>Manage access to the trading mentorship.</p></div></div><div className="plan-box"><div><span>ACTIVE PLAN</span><h3>Motion Only member</h3><p>Mentorship access is part of the invite-only beta.</p></div><div><b>Free</b><span>/ beta</span></div></div><div className="setting-row"><div><b>Invoice history</b><p>No paid invoices during the free private beta.</p></div><button onClick={() => toast("No invoices in beta.")}><Download size={14}/> View</button></div></>;
+  if (tab === "Preferences") return <><div className="account-head"><div className="setting-icon"><Settings size={20}/></div><div><h2>Preferences</h2><p>Choose how the hub alerts you.</p></div></div>{["New signal alerts","Trade execution notifications","Weekly market briefing","Academy progress reminders"].map((item, index) => <div className="toggle-row" key={item}><div><b>{item}</b><p>{index === 0 ? "Receive an alert when a reviewed setup is published." : "Keep up to date with mentorship activity."}</p></div><button onClick={() => toast(`${item} updated.`)}>On</button></div>)}</>;
+  return <><div className="account-head"><div className="large-avatar">JG</div><div><h2>Profile information</h2><p>Update how the mentorship area recognises you.</p></div></div><div className="form-grid"><label>First name<input defaultValue="Joel"/></label><label>Last name<input defaultValue="Gilbert"/></label><label className="full">Email address<input type="email" defaultValue="joel@example.com"/></label><label>Trading experience<select defaultValue="Under 2 years"><option>New to trading</option><option>Under 2 years</option><option>2-5 years</option><option>5+ years</option></select></label><label>Risk profile<select defaultValue="Moderate"><option>Conservative</option><option>Moderate</option><option>Aggressive</option></select></label></div><button className="primary" onClick={() => toast("Profile saved.")}>Save changes</button></>;
 }
 
 function SettingsPrivacyPage({ toast, notificationSettings, setNotificationSettings, theme, setTheme }) {
