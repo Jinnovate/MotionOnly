@@ -1767,14 +1767,12 @@ function ConsistencyHubPage({ toast }) {
   const [selectedSignal, setSelectedSignal] = useState(null);
   const [copyActive, setCopyActive] = useState(true);
   const [risk, setRisk] = useState(1);
-  const [accountTab, setAccountTab] = useState("Profile");
   const filteredSignals = signalFilter === "All" ? tchSignals : tchSignals.filter(signal => signal.type === signalFilter);
   const tabs = [
     ["Overview", LayoutDashboard],
     ["Signals", TrendingUp],
     ["Academy", GraduationCap],
     ["Copy Trading", Copy],
-    ["Account", UserRound],
   ];
 
   return <div className="consistency-page full-hub">
@@ -1782,7 +1780,7 @@ function ConsistencyHubPage({ toast }) {
       <div>
         <p className="eyebrow">THE CONSISTENCY HUB</p>
         <h1>Consistency is the edge.</h1>
-        <p>A trading mentorship area inside Motion Only: education, trade context, risk controls, copy-trading concepts and account preferences in one clean hub.</p>
+        <p>A trading mentorship area inside Motion Only: education, trade context, risk controls and copy-trading concepts in one clean hub.</p>
         <div className="consistency-actions">
           <button className="primary" onClick={() => setSection("Signals")}><ArrowUpRight size={15}/> View signals</button>
           <button className="soft-btn" onClick={() => setSection("Academy")}>Open academy <ChevronRight size={15}/></button>
@@ -1844,8 +1842,6 @@ function ConsistencyHubPage({ toast }) {
     </>}
 
     {section === "Copy Trading" && <CopyTradingPanel copyActive={copyActive} setCopyActive={setCopyActive} risk={risk} setRisk={setRisk} toast={toast}/>}
-
-    {section === "Account" && <section className="tch-panel account-panel"><div className="account-tabs">{["Profile","Security","Billing","Preferences"].map(tab => <button className={accountTab === tab ? "active" : ""} onClick={() => setAccountTab(tab)} key={tab}>{tab}</button>)}</div><AccountTab tab={accountTab} toast={toast}/></section>}
   </div>;
 }
 
