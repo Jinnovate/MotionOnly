@@ -1642,26 +1642,32 @@ const marketBriefs = [
   {
     id: 1,
     tag: "UK MARKET",
+    source: "Motion Only",
     title: "FTSE watchlist: banks, miners and energy remain the key movers",
     summary: "Track sector strength first. For UK shares, avoid reacting to one headline until you understand whether the move is market-wide, sector-wide or company-specific.",
     impact: "Good for building a cleaner watchlist before looking at individual stocks.",
     time: "Morning brief",
+    url: "",
   },
   {
     id: 2,
     tag: "US STOCKS",
+    source: "Motion Only",
     title: "Large-cap tech: trend strength still needs earnings confirmation",
     summary: "Price strength means more when revenue, margins and guidance support it. The useful question is not just 'is it up?' but 'what would invalidate the move?'",
     impact: "Useful for members tracking growth stocks without chasing candles.",
     time: "Market theme",
+    url: "",
   },
   {
     id: 3,
     tag: "RISK",
+    source: "Motion Only",
     title: "Rates and inflation data remain major portfolio drivers",
     summary: "Before adding exposure, check whether the next economic release could change the wider risk mood. Position size matters more when macro events are close.",
     impact: "Helps members avoid taking unnecessary risk before scheduled news.",
     time: "Macro note",
+    url: "",
   },
 ];
 
@@ -1674,10 +1680,32 @@ const marketWatchAreas = [
 
 function MarketNewsPage({ toast }) {
   const [filter, setFilter] = useState("All");
-  const filters = ["All", "UK market", "US stocks", "Risk"];
+  const [articles, setArticles] = useState(marketBriefs);
+  const [feedStatus, setFeedStatus] = useState("Curated fallback");
+  const [lastUpdated, setLastUpdated] = useState("Static briefing");
+  const filters = ["All", ...Array.from(new Set(articles.map(item => item.tag))).slice(0, 7)];
   const visibleBriefs = filter === "All"
-    ? marketBriefs
-    : marketBriefs.filter(item => item.tag.toLowerCase() === filter.toLowerCase());
+    ? articles
+    : articles.filter(item => item.tag.toLowerCase() === filter.toLowerCase());
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/.netlify/functions/market-news")
+      .then(response => response.ok ? response.json() : Promise.reject(new Error("Feed unavailable")))
+      .then(data => {
+        if (cancelled || !Array.isArray(data.articles) || !data.articles.length) return;
+        setArticles(data.articles);
+        setFeedStatus(data.sourceMode === "live-public-feeds" ? "Live public feeds" : "Curated fallback");
+        setLastUpdated(data.updatedAt ? new Date(data.updatedAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) : "Recently");
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setFeedStatus("Curated fallback");
+          setLastUpdated("Live feed unavailable");
+        }
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   return <div className="market-page">
     <section className="market-hero">
@@ -1687,9 +1715,9 @@ function MarketNewsPage({ toast }) {
         <p>A simple portal for stocks, shares and investing themes. Built to help members read the market, manage risk and avoid headline-chasing.</p>
       </div>
       <div className="market-digest-card">
-        <span>Today&apos;s format</span>
+        <span>{feedStatus}</span>
         <strong>Brief. Context. Risk.</strong>
-        <p>No crowded feed. No profit bait. Each item should explain what happened, why it matters and what to watch next.</p>
+        <p>Updated: {lastUpdated}. Public headlines only, with source links where available. No copied articles, no profit bait.</p>
       </div>
     </section>
 
@@ -1710,7 +1738,7 @@ function MarketNewsPage({ toast }) {
         {visibleBriefs.map(item => <article className="market-card" key={item.id}>
           <header>
             <span>{item.tag}</span>
-            <small>{item.time}</small>
+            <small>{item.source || "Source"} · {item.time}</small>
           </header>
           <h2>{item.title}</h2>
           <p>{item.summary}</p>
@@ -1721,6 +1749,7 @@ function MarketNewsPage({ toast }) {
           <div className="market-actions">
             <button onClick={() => toast("Saved to market watchlist.")}><Bookmark size={14}/> Save</button>
             <button onClick={() => toast("Discussion prompt opened.")}><MessageCircle size={14}/> Discuss</button>
+            <button onClick={() => item.url ? window.open(item.url, "_blank", "noopener,noreferrer") : toast("No source link available for this fallback brief.")}><ExternalLink size={14}/> Source</button>
           </div>
         </article>)}
       </main>
