@@ -1757,8 +1757,128 @@ const tchCourses = [
   { tag: "MINDSET", title: "Trading psychology", lessons: 8, progress: 0, note: "Avoiding revenge trades, FOMO and emotional execution." },
 ];
 
+const weekOneTradeRules = [
+  "4H zone marked",
+  "Zone alert triggered",
+  "EURUSD only",
+  "1:1 RR planned",
+  "No recovery trade",
+  "Stop not moved",
+];
+
+const behaviourRules = [
+  "I do not trade to recover money",
+  "I do not increase risk",
+  "I do not move my stop",
+  "I do not take a third trade",
+  "If I break a rule, trading ends for the day",
+  "I use TradingView alerts so I am not tempted",
+];
+
+const starterTradeLog = [
+  { time: "09:42", pair: "EURUSD", direction: "Sell", setup: "Price tapped upper 4H zone", risk: "1.0%", rr: "1:1", result: "Win", journal: "Logged", rules: [true, true, true, true, true, true], note: "Waited for alert. No early entry." },
+  { time: "13:18", pair: "EURUSD", direction: "Buy", setup: "Price tapped lower 4H zone", risk: "1.0%", rr: "1:1", result: "Loss", journal: "Logged", rules: [true, true, true, true, true, true], note: "Loss accepted. No revenge trade." },
+];
+
 function ConsistencyMetric({ label, value, note, icon: Icon }) {
   return <div className="tch-metric"><span><Icon size={17}/></span><small>{label}</small><strong>{value}</strong><em>{note}</em></div>;
+}
+
+function TradeDashboardPanel({ toast }) {
+  const [tradeLog, setTradeLog] = useState(starterTradeLog);
+  const [draft, setDraft] = useState({ time: "", direction: "Buy", setup: "", risk: "1.0%", rr: "1:1", result: "Pending", journal: "Not logged", note: "", rules: weekOneTradeRules.map(() => false) });
+  const completedTrades = tradeLog.length;
+  const cleanTrades = tradeLog.filter(trade => trade.rules.every(Boolean)).length;
+  const journalsLogged = tradeLog.filter(trade => trade.journal === "Logged").length;
+  const riskDeviations = tradeLog.filter(trade => trade.risk !== "1.0%").length;
+  const adherence = completedTrades ? Math.round((cleanTrades / completedTrades) * 100) : 0;
+
+  const updateRule = (index) => setDraft(current => ({ ...current, rules: current.rules.map((rule, ruleIndex) => ruleIndex === index ? !rule : rule) }));
+  const addTrade = (event) => {
+    event.preventDefault();
+    if (!draft.time || !draft.setup.trim()) return toast("Add the trade time and setup before logging.");
+    setTradeLog(current => [{ ...draft, pair: "EURUSD", setup: draft.setup.trim(), note: draft.note.trim() || "No note added." }, ...current]);
+    setDraft({ time: "", direction: "Buy", setup: "", risk: "1.0%", rr: "1:1", result: "Pending", journal: "Not logged", note: "", rules: weekOneTradeRules.map(() => false) });
+    toast("Trade logged. Discipline score updated.");
+  };
+
+  return <div className="trade-dashboard">
+    <section className="tch-panel lesson-brief">
+      <div>
+        <p className="eyebrow">TCH MENTORSHIP · OBJECTIVE WEEK 1</p>
+        <h2>Profit is not the goal. Discipline is.</h2>
+        <p>The first lesson is simple: trade one pair, one rule-set, one week. The dashboard measures whether the process was followed, not whether the trade won.</p>
+      </div>
+      <div className="objective-list">
+        <span><CheckCircle2 size={15}/> 100% rule adherence</span>
+        <span><ShieldCheck size={15}/> 0 risk deviations</span>
+        <span><BookOpen size={15}/> Journal every trade properly</span>
+      </div>
+    </section>
+
+    <div className="trade-scoreboard">
+      <ConsistencyMetric icon={Target} label="Rule adherence" value={`${adherence}%`} note={`${cleanTrades}/${completedTrades} trades fully clean`}/>
+      <ConsistencyMetric icon={AlertTriangle} label="Risk deviations" value={riskDeviations} note="Target is zero for Week 1"/>
+      <ConsistencyMetric icon={BookOpen} label="Journals logged" value={`${journalsLogged}/${completedTrades}`} note="Every trade needs a proper note"/>
+      <ConsistencyMetric icon={Timer} label="Session" value="Open" note="No setup in session = no trade"/>
+    </div>
+
+    <div className="trade-dashboard-grid">
+      <section className="tch-panel week-rules">
+        <div className="panel-head"><div><small>MARKET</small><h3>EURUSD only</h3></div><span>1 pair</span></div>
+        <div className="market-rule-card"><b>Session: OPEN</b><p>If no setup appears during the session, the correct action is no trade.</p></div>
+        <div className="rule-block">
+          <h4>Setup rules</h4>
+          {["Mark 4 hour zones only", "Set alerts at the zone above and below current price", "When the alert triggers, enter at 1:1 risk to reward", "Price into upper zone = sell trade", "Price into lower zone = buy trade", "If every criteria is not met, no trade"].map((item, index) => <span key={item}><i>{index + 1}</i>{item}</span>)}
+        </div>
+        <div className="rule-block behaviour">
+          <h4>Behaviour rules</h4>
+          {behaviourRules.map(item => <span key={item}><i><Lock size={11}/></i>{item}</span>)}
+        </div>
+      </section>
+
+      <section className="tch-panel trade-log-entry">
+        <div className="panel-head"><div><small>LOG A TRADE</small><h3>Process check before outcome</h3></div><span>{draft.rules.filter(Boolean).length}/{weekOneTradeRules.length} rules</span></div>
+        <form onSubmit={addTrade}>
+          <div className="trade-form-grid">
+            <label>Time<input value={draft.time} onChange={event => setDraft({...draft, time:event.target.value})} placeholder="09:30"/></label>
+            <label>Pair<input value="EURUSD" readOnly/></label>
+            <label>Direction<select value={draft.direction} onChange={event => setDraft({...draft, direction:event.target.value})}><option>Buy</option><option>Sell</option></select></label>
+            <label>Risk<select value={draft.risk} onChange={event => setDraft({...draft, risk:event.target.value})}><option>1.0%</option><option>0.5%</option><option>1.5%</option><option>Deviation</option></select></label>
+            <label>Risk reward<select value={draft.rr} onChange={event => setDraft({...draft, rr:event.target.value})}><option>1:1</option><option>Less than 1:1</option><option>More than 1:1</option></select></label>
+            <label>Result<select value={draft.result} onChange={event => setDraft({...draft, result:event.target.value})}><option>Pending</option><option>Win</option><option>Loss</option><option>Break even</option><option>No trade</option></select></label>
+            <label className="wide">Setup taken<input value={draft.setup} onChange={event => setDraft({...draft, setup:event.target.value})} placeholder="Price tapped lower 4H zone after alert"/></label>
+            <label className="wide">Journal note<input value={draft.note} onChange={event => setDraft({...draft, note:event.target.value})} placeholder="What happened? Did you follow the rule-set?"/></label>
+          </div>
+          <div className="rule-check-grid">
+            {weekOneTradeRules.map((rule, index) => <button type="button" className={draft.rules[index] ? "checked" : ""} key={rule} onClick={() => updateRule(index)}><i>{draft.rules[index] ? <Check size={12}/> : null}</i>{rule}</button>)}
+          </div>
+          <div className="journal-toggle">
+            <button type="button" className={draft.journal === "Logged" ? "active" : ""} onClick={() => setDraft({...draft, journal: draft.journal === "Logged" ? "Not logged" : "Logged"})}><BookOpen size={14}/> Journal {draft.journal === "Logged" ? "complete" : "not logged"}</button>
+            <button type="submit" className="primary"><Plus size={14}/> Add trade</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <section className="tch-panel trade-sheet">
+      <div className="panel-head"><div><small>TRADE DASHBOARD</small><h3>Week 1 logbook</h3></div><span>{completedTrades} trades logged</span></div>
+      <div className="motion-sheet">
+        <div className="sheet-row sheet-head"><span>Time</span><span>Pair</span><span>Direction</span><span>Setup</span><span>Risk</span><span>RR</span><span>Result</span><span>Rules</span><span>Journal</span></div>
+        {tradeLog.map((trade, index) => <div className="sheet-row" key={`${trade.time}-${index}`}>
+          <span>{trade.time}</span>
+          <span>{trade.pair}</span>
+          <span className={trade.direction.toLowerCase()}>{trade.direction}</span>
+          <span>{trade.setup}<small>{trade.note}</small></span>
+          <span className={trade.risk === "1.0%" ? "good" : "bad"}>{trade.risk}</span>
+          <span>{trade.rr}</span>
+          <span className={trade.result.toLowerCase().replace(" ", "-")}>{trade.result}</span>
+          <span>{trade.rules.every(Boolean) ? "Clean" : `${trade.rules.filter(Boolean).length}/${trade.rules.length}`}</span>
+          <span>{trade.journal}</span>
+        </div>)}
+      </div>
+    </section>
+  </div>;
 }
 
 function ConsistencyHubPage({ toast }) {
@@ -1770,6 +1890,7 @@ function ConsistencyHubPage({ toast }) {
   const filteredSignals = signalFilter === "All" ? tchSignals : tchSignals.filter(signal => signal.type === signalFilter);
   const tabs = [
     ["Overview", LayoutDashboard],
+    ["Trade Dashboard", ListChecks],
     ["Signals", TrendingUp],
     ["Academy", GraduationCap],
     ["Copy Trading", Copy],
@@ -1827,6 +1948,8 @@ function ConsistencyHubPage({ toast }) {
         <section className="tch-panel system-status"><div><span className="status-pulse"/><small>AUTOMATION STATUS</small><h3>Copy system is active</h3><p>Balanced FX · Last checked just now</p></div><button onClick={() => setSection("Copy Trading")}><SlidersHorizontal size={16}/></button></section>
       </div>
     </>}
+
+    {section === "Trade Dashboard" && <TradeDashboardPanel toast={toast}/>}
 
     {section === "Signals" && <>
       <div className="tch-title"><div><p className="eyebrow">TCH TRADE DESK</p><h2>Signals</h2><span>Owner-led trade ideas with entries, invalidation and risk context.</span></div><div className="market-status"><i/> Market open</div></div>
