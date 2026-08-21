@@ -1881,6 +1881,83 @@ function TradeDashboardPanel({ toast }) {
   </div>;
 }
 
+const partnerRows = [
+  { member: "Aston Channer", source: "Telegram", broker: "Partner Broker A", model: "CPA", status: "Invited", stage: "Awaiting signup", value: "£0", disclosure: "Sent" },
+  { member: "Liam Carter", source: "Network room", broker: "Partner Broker A", model: "IB", status: "Verified", stage: "Active", value: "Tracked", disclosure: "Accepted" },
+  { member: "Marcus Reed", source: "1-1 call", broker: "Partner Broker B", model: "CPA", status: "Signed up", stage: "KYC pending", value: "Pending", disclosure: "Sent" },
+];
+
+function PartnerHubPanel({ toast }) {
+  const [rows, setRows] = useState(partnerRows);
+  const [draft, setDraft] = useState({ member: "", source: "Telegram", broker: "Partner Broker A", model: "CPA", status: "Invited", stage: "Awaiting signup", value: "£0", disclosure: "Sent" });
+  const cpaRows = rows.filter(row => row.model === "CPA").length;
+  const ibRows = rows.filter(row => row.model === "IB").length;
+  const accepted = rows.filter(row => row.disclosure === "Accepted").length;
+
+  const addPartnerRow = (event) => {
+    event.preventDefault();
+    if (!draft.member.trim()) return toast("Add the member or lead name first.");
+    setRows(current => [{ ...draft, member: draft.member.trim() }, ...current]);
+    setDraft({ member: "", source: "Telegram", broker: "Partner Broker A", model: "CPA", status: "Invited", stage: "Awaiting signup", value: "£0", disclosure: "Sent" });
+    toast("Partner lead added.");
+  };
+
+  return <div className="partner-hub">
+    <section className="tch-panel partner-brief">
+      <div>
+        <p className="eyebrow">ADMIN / APPROVED PARTNERS</p>
+        <h2>Partner Hub</h2>
+        <p>Track CPA and IB relationships without turning the mentorship into a broker funnel. This area is for approved operators to manage referrals, disclosures and partner status.</p>
+      </div>
+      <div className="partner-warning"><ShieldCheck size={18}/><span>No income claims. No deposit pressure. Any broker relationship must be disclosed clearly before a member acts.</span></div>
+    </section>
+
+    <div className="trade-scoreboard">
+      <ConsistencyMetric icon={Users} label="Tracked leads" value={rows.length} note="Internal partner pipeline"/>
+      <ConsistencyMetric icon={Wallet} label="CPA entries" value={cpaRows} note="One-off acquisition model"/>
+      <ConsistencyMetric icon={TrendingUp} label="IB entries" value={ibRows} note="Ongoing volume-share model"/>
+      <ConsistencyMetric icon={ShieldCheck} label="Disclosures accepted" value={`${accepted}/${rows.length}`} note="Required before referral action"/>
+    </div>
+
+    <div className="partner-grid">
+      <section className="tch-panel partner-form">
+        <div className="panel-head"><div><small>ADD PARTNER LEAD</small><h3>Referral tracker</h3></div><span>Controlled</span></div>
+        <form onSubmit={addPartnerRow}>
+          <label>Member or lead<input value={draft.member} onChange={event => setDraft({...draft, member:event.target.value})} placeholder="Name"/></label>
+          <label>Source<select value={draft.source} onChange={event => setDraft({...draft, source:event.target.value})}><option>Telegram</option><option>Network room</option><option>1-1 call</option><option>Content enquiry</option><option>Existing member</option></select></label>
+          <label>Broker partner<select value={draft.broker} onChange={event => setDraft({...draft, broker:event.target.value})}><option>Partner Broker A</option><option>Partner Broker B</option><option>Manual review needed</option></select></label>
+          <label>Commercial model<select value={draft.model} onChange={event => setDraft({...draft, model:event.target.value})}><option>CPA</option><option>IB</option><option>None / education only</option></select></label>
+          <label>Status<select value={draft.status} onChange={event => setDraft({...draft, status:event.target.value})}><option>Invited</option><option>Signed up</option><option>Verified</option><option>Rejected</option><option>Paused</option></select></label>
+          <label>Stage<select value={draft.stage} onChange={event => setDraft({...draft, stage:event.target.value})}><option>Awaiting signup</option><option>KYC pending</option><option>Active</option><option>Needs follow-up</option><option>No action</option></select></label>
+          <button className="primary" type="submit"><Plus size={14}/> Add to tracker</button>
+        </form>
+      </section>
+
+      <section className="tch-panel partner-policy">
+        <div className="panel-head"><div><small>BOUNDARIES</small><h3>What this must never become</h3></div><Lock size={18}/></div>
+        {["Do not promise profit, income or low-risk results.", "Do not pressure deposits, borrowing or account funding.", "Do not hide CPA, IB, affiliate or commission relationships.", "Do not let trading education become a recruitment script.", "Do not give partner access to private trade journals or progress data."].map((item, index) => <span key={item}><i>{index + 1}</i>{item}</span>)}
+      </section>
+    </div>
+
+    <section className="tch-panel partner-sheet-panel">
+      <div className="panel-head"><div><small>CPA / IB DASHBOARD</small><h3>Partner pipeline</h3></div><span>{rows.length} records</span></div>
+      <div className="partner-sheet">
+        <div className="partner-row partner-head"><span>Member</span><span>Source</span><span>Broker</span><span>Model</span><span>Status</span><span>Stage</span><span>Value</span><span>Disclosure</span></div>
+        {rows.map((row, index) => <div className="partner-row" key={`${row.member}-${index}`}>
+          <span>{row.member}</span>
+          <span>{row.source}</span>
+          <span>{row.broker}</span>
+          <span className="gold">{row.model}</span>
+          <span>{row.status}</span>
+          <span>{row.stage}</span>
+          <span>{row.value}</span>
+          <span className={row.disclosure === "Accepted" ? "gold" : ""}>{row.disclosure}</span>
+        </div>)}
+      </div>
+    </section>
+  </div>;
+}
+
 function ConsistencyHubPage({ toast }) {
   const [section, setSection] = useState("Overview");
   const [signalFilter, setSignalFilter] = useState("All");
@@ -1894,6 +1971,7 @@ function ConsistencyHubPage({ toast }) {
     ["Signals", TrendingUp],
     ["Academy", GraduationCap],
     ["Copy Trading", Copy],
+    ["Partner Hub", Wallet],
   ];
 
   return <div className="consistency-page full-hub">
@@ -1965,6 +2043,8 @@ function ConsistencyHubPage({ toast }) {
     </>}
 
     {section === "Copy Trading" && <CopyTradingPanel copyActive={copyActive} setCopyActive={setCopyActive} risk={risk} setRisk={setRisk} toast={toast}/>}
+
+    {section === "Partner Hub" && <PartnerHubPanel toast={toast}/>}
   </div>;
 }
 
