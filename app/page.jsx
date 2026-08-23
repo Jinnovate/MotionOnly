@@ -11,11 +11,30 @@ import {
 } from "lucide-react";
 import { libraryCategories, libraryContent, libraryStats } from "./libraryContent";
 
+const featureFlags = {
+  fitness: false,
+  marketNews: false,
+  ranks: false,
+  consistencySignals: false,
+  consistencyCopyTrading: false,
+  consistencyPartnerHub: false,
+};
+
+const pageFeatureMap = {
+  Fitness: "fitness",
+  "Market News": "marketNews",
+  Ranks: "ranks",
+};
+
+function featureEnabled(key) {
+  return !key || featureFlags[key] !== false;
+}
+
 const nav = [
   ["Today", LayoutDashboard], ["Goals & habits", Target], ["Network", Users],
   ["Messages", MessageCircle], ["Projects", FolderKanban], ["Fitness", Dumbbell], ["Schedule", CalendarDays],
   ["Library", BookOpen], ["Consistency Hub", ListChecks], ["Market News", Newspaper], ["Ranks", Award],
-];
+].filter(([label]) => featureEnabled(pageFeatureMap[label]));
 
 const goals = [];
 
@@ -393,7 +412,9 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
           <section className="card pulse">
             <p className="eyebrow">EXP PROGRESS</p><div className="pulse-top"><div className="ring" style={{background:`conic-gradient(var(--gold) 0 ${Math.round((levelExp / levelSize) * 100)}%,#303639 ${Math.round((levelExp / levelSize) * 100)}%)`}}><span>{levelExp}<small>/{levelSize}</small></span></div><div><h3>Level {currentLevel}</h3><p>{levelSize - levelExp} EXP to next level</p></div></div>
             <div className="stat-row"><span>Level<strong>{currentLevel} <small>Current rank</small></strong></span><span>EXP<strong>{levelExp} <small>/ {levelSize}</small></strong></span></div>
-            <button className="soft-btn" onClick={() => setActive("Ranks")}>View rank unlocks <ChevronRight size={15}/></button>
+            {featureEnabled("ranks")
+              ? <button className="soft-btn" onClick={() => setActive("Ranks")}>View rank unlocks <ChevronRight size={15}/></button>
+              : <button className="soft-btn" onClick={() => setActive("Goals & habits")}>Review progress <ChevronRight size={15}/></button>}
           </section>
         </aside>
       </div>
@@ -1997,28 +2018,28 @@ function ConsistencyHubPage({ toast }) {
   const tabs = [
     ["Overview", LayoutDashboard],
     ["Trade Dashboard", ListChecks],
-    ["Signals", TrendingUp],
+    featureEnabled("consistencySignals") && ["Signals", TrendingUp],
     ["Academy", GraduationCap],
-    ["Copy Trading", Copy],
-    ["Partner Hub", Wallet],
-  ];
+    featureEnabled("consistencyCopyTrading") && ["Copy Trading", Copy],
+    featureEnabled("consistencyPartnerHub") && ["Partner Hub", Wallet],
+  ].filter(Boolean);
 
   return <div className="consistency-page full-hub">
     <section className="consistency-hero">
       <div>
         <p className="eyebrow">THE CONSISTENCY HUB</p>
         <h1>Consistency is the edge.</h1>
-        <p>A trading mentorship area inside Motion Only: education, trade context, risk controls and copy-trading concepts in one clean hub.</p>
+        <p>A trading mentorship area inside Motion Only: education, discipline, risk rules and execution tracking in one clean hub.</p>
         <div className="consistency-actions">
-          <button className="primary" onClick={() => setSection("Signals")}><ArrowUpRight size={15}/> View signals</button>
+          <button className="primary" onClick={() => setSection("Trade Dashboard")}><ArrowUpRight size={15}/> Open trade dashboard</button>
           <button className="soft-btn" onClick={() => setSection("Academy")}>Open academy <ChevronRight size={15}/></button>
         </div>
       </div>
       <div className="consistency-terminal">
         <div className="terminal-head"><span>MO / TCH</span><i>Mentorship</i></div>
-        <strong>Education. Signals. Execution.</strong>
+        <strong>Education. Discipline. Execution.</strong>
         <div className="terminal-line"><span>Risk profile</span><b>Moderate</b></div>
-        <div className="terminal-line"><span>Latest setup</span><b>EUR/USD buy idea</b></div>
+        <div className="terminal-line"><span>Current lesson</span><b>EURUSD rule adherence</b></div>
         <div className="terminal-line"><span>Next lesson</span><b>Market structure</b></div>
         <svg viewBox="0 0 320 110" className="consistency-chart" aria-hidden="true">
           <path d="M4 90 L56 72 L96 80 L146 42 L196 58 L248 27 L316 18"/>
@@ -2046,19 +2067,19 @@ function ConsistencyHubPage({ toast }) {
           <div className="chart-labels"><span>22 JUL</span><span>29 JUL</span><span>05 AUG</span><span>12 AUG</span><span>20 AUG</span></div>
         </section>
         <section className="tch-panel activity-panel">
-          <div className="panel-head"><div><small>RECENT ACTIVITY</small><h3>Latest trades</h3></div><button onClick={() => setSection("Copy Trading")}>View all</button></div>
+          <div className="panel-head"><div><small>RECENT ACTIVITY</small><h3>Latest trades</h3></div><button onClick={() => setSection("Trade Dashboard")}>View all</button></div>
           {tchSignals.slice(0, 3).map((signal, index) => <div className="trade-item" key={signal.market}><span className={`trade-side ${signal.direction.toLowerCase()}`}>{signal.direction[0]}</span><div><b>{signal.market}</b><small>{index === 0 ? "12 min ago" : index === 1 ? "2h ago" : "Yesterday"}</small></div><div><b className={index === 2 ? "loss" : "gain"}>{index === 2 ? "-£42.10" : index === 1 ? "+£187.40" : "+£64.20"}</b><small>{signal.direction} · Closed</small></div></div>)}
         </section>
       </div>
       <div className="tch-lower-grid">
         <section className="tch-panel next-lesson"><span className="eyebrow">CONTINUE LEARNING</span><h3>Reading market structure</h3><p>Module 2 · Lesson 4 of 8</p><i><b style={{width:"48%"}}/></i><button onClick={() => setSection("Academy")}><Play size={14}/> Resume lesson</button></section>
-        <section className="tch-panel system-status"><div><span className="status-pulse"/><small>AUTOMATION STATUS</small><h3>Copy system is active</h3><p>Balanced FX · Last checked just now</p></div><button onClick={() => setSection("Copy Trading")}><SlidersHorizontal size={16}/></button></section>
+        <section className="tch-panel system-status"><div><span className="status-pulse"/><small>MENTORSHIP STATUS</small><h3>Week 1 dashboard active</h3><p>EURUSD · Discipline before profit</p></div><button onClick={() => setSection("Trade Dashboard")}><SlidersHorizontal size={16}/></button></section>
       </div>
     </>}
 
     {section === "Trade Dashboard" && <TradeDashboardPanel toast={toast}/>}
 
-    {section === "Signals" && <>
+    {featureEnabled("consistencySignals") && section === "Signals" && <>
       <div className="tch-title"><div><p className="eyebrow">TCH TRADE DESK</p><h2>Signals</h2><span>Owner-led trade ideas with entries, invalidation and risk context.</span></div><div className="market-status"><i/> Market open</div></div>
       <div className="signal-toolbar"><div>{["All","Forex","Metal","Index"].map(item => <button className={signalFilter === item ? "active" : ""} onClick={() => setSignalFilter(item)} key={item}>{item}</button>)}</div><button onClick={() => toast("Signal filters opened.")}><SlidersHorizontal size={14}/> Filters</button></div>
       <div className="signal-cards">{filteredSignals.map(signal => <article key={signal.market} className="app-signal"><div className="signal-card-top"><div className="pair-icon">{signal.market.slice(0,2)}</div><div><b>{signal.market}</b><small>{signal.type} · Educational setup</small></div><span className={`direction ${signal.direction.toLowerCase()}`}>{signal.direction}</span></div><div className="signal-prices"><div><small>Entry</small><b>{signal.price}</b></div><div><small>Stop</small><b>{signal.stop}</b></div><div><small>Target</small><b>{signal.target}</b></div></div><div className="signal-risk"><span>Confidence {signal.confidence}%</span><i><b style={{width:`${signal.confidence}%`}}/></i><span>Risk 1.0%</span></div><button onClick={() => setSelectedSignal(signal)}>View full analysis <ArrowUpRight size={14}/></button></article>)}</div>
@@ -2071,9 +2092,9 @@ function ConsistencyHubPage({ toast }) {
       <div className="course-grid">{tchCourses.map((course, index) => <article className="academy-course" key={course.title}><div className={`course-thumb thumb-${index}`}><span>{String(index+1).padStart(2,"0")}</span><BookOpen size={23}/></div><div className="course-info"><small>{course.tag}</small><h3>{course.title}</h3><p>{course.lessons} lessons · {course.note}</p><i><b style={{width:`${course.progress}%`}}/></i><div><span>{course.progress ? `${course.progress}% complete` : "Not started"}</span><button onClick={() => toast(`${course.title} opened.`)}><ChevronRight size={16}/></button></div></div></article>)}</div>
     </>}
 
-    {section === "Copy Trading" && <CopyTradingPanel copyActive={copyActive} setCopyActive={setCopyActive} risk={risk} setRisk={setRisk} toast={toast}/>}
+    {featureEnabled("consistencyCopyTrading") && section === "Copy Trading" && <CopyTradingPanel copyActive={copyActive} setCopyActive={setCopyActive} risk={risk} setRisk={setRisk} toast={toast}/>}
 
-    {section === "Partner Hub" && <PartnerHubPanel toast={toast}/>}
+    {featureEnabled("consistencyPartnerHub") && section === "Partner Hub" && <PartnerHubPanel toast={toast}/>}
   </div>;
 }
 
@@ -2454,35 +2475,36 @@ export default function App() {
     setActive("Today");
     toast("Signed out.");
   };
+  const visibleActive = featureEnabled(pageFeatureMap[active]) ? active : "Today";
   if (realBeta && !authChecked) return <div className="auth-loading"><div className="brand auth-logo"><div className="brandmark"><img src="/motion-only-logo-dark.png" alt="" /></div><div><strong>MOTION <b>ONLY</b></strong><span>CONNECT · BUILD · ADVANCE</span></div></div><p>Checking secure session…</p></div>;
   if (realBeta && !currentUser) return <AuthGate apiBase={apiBase} supabase={supabase} onSession={onSession}/>;
   return <div className="app-shell">
-    <Sidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} currentUser={currentUser} onLogout={logout} realBeta={realBeta}/>
+    <Sidebar active={visibleActive} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} currentUser={currentUser} onLogout={logout} realBeta={realBeta}/>
     <div className="content-shell">
       <MotionTopbar setOpen={setMenuOpen} setActive={setActive} notifications={notifications} setNotifications={setNotifications} theme={theme} setTheme={setTheme} notificationSettings={notificationSettings} currentUser={currentUser} realBeta={realBeta} onLogout={logout}/>
-      <div className="content">{active === "Today"
+      <div className="content">{visibleActive === "Today"
         ? <Home habits={habits} toggleHabit={toggleHabit} addHabit={addHabit} deleteHabit={deleteHabit} setActive={setActive} toast={toast}/>
-        : active === "Goals & habits"
+        : visibleActive === "Goals & habits"
           ? <SimpleGoalsHabitsPage toast={toast}/>
-        : active === "Schedule"
+        : visibleActive === "Schedule"
           ? <SchedulePage toast={toast}/>
-        : active === "Fitness"
+        : visibleActive === "Fitness"
           ? <FitnessPage toast={toast}/>
-        : ["Network","Messages","Projects"].includes(active)
-          ? <DeepWorkPage key={active} name={active} toast={toast} notificationSettings={notificationSettings} setNotificationSettings={setNotificationSettings}/>
-        : active === "Library"
+        : ["Network","Messages","Projects"].includes(visibleActive)
+          ? <DeepWorkPage key={visibleActive} name={visibleActive} toast={toast} notificationSettings={notificationSettings} setNotificationSettings={setNotificationSettings}/>
+        : visibleActive === "Library"
           ? <LibraryPage toast={toast}/>
-        : active === "Consistency Hub"
+        : visibleActive === "Consistency Hub"
           ? <ConsistencyHubPage toast={toast} setActive={setActive}/>
-        : active === "Market News"
+        : visibleActive === "Market News"
           ? <MarketNewsPage toast={toast}/>
-        : active === "Ranks"
+        : visibleActive === "Ranks"
           ? <RanksPage/>
-        : active === "Admin"
+        : visibleActive === "Admin"
           ? <OperationsPage toast={toast}/>
-        : active === "Settings"
+        : visibleActive === "Settings"
           ? <SettingsPrivacyPage toast={toast} notificationSettings={notificationSettings} setNotificationSettings={setNotificationSettings} theme={theme} setTheme={setTheme}/>
-          : <FeaturePage key={active} name={active} toast={toast}/>}
+          : <FeaturePage key={visibleActive} name={visibleActive} toast={toast}/>}
       </div>
     </div>
     <InstallPrompt toast={toast}/>
