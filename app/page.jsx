@@ -32,11 +32,19 @@ function featureEnabled(key) {
   return !key || featureFlags[key] !== false;
 }
 
+const archivedNav = [
+  ["Fitness", Dumbbell],
+  ["Consistency Hub", ListChecks],
+  ["Market News", Newspaper],
+  ["Ranks", Award],
+];
+
 const nav = [
   ["Today", LayoutDashboard], ["Goals & habits", Target], ["Network", Users],
-  ["Messages", MessageCircle], ["Projects", FolderKanban], ["Fitness", Dumbbell], ["Schedule", CalendarDays],
-  ["Library", BookOpen], ["Consistency Hub", ListChecks], ["Market News", Newspaper], ["Ranks", Award],
-].filter(([label]) => featureEnabled(pageFeatureMap[label]));
+  ["Messages", MessageCircle], ["Projects", FolderKanban], ["Schedule", CalendarDays],
+  ["Library", BookOpen],
+  ...archivedNav.filter(([label]) => featureEnabled(pageFeatureMap[label])),
+];
 
 const goals = [];
 
