@@ -12,6 +12,7 @@ import {
 import { libraryCategories, libraryContent, libraryStats } from "./libraryContent";
 
 const featureFlags = {
+  consistencyHub: false,
   fitness: false,
   marketNews: false,
   ranks: false,
@@ -21,6 +22,7 @@ const featureFlags = {
 };
 
 const pageFeatureMap = {
+  "Consistency Hub": "consistencyHub",
   Fitness: "fitness",
   "Market News": "marketNews",
   Ranks: "ranks",
