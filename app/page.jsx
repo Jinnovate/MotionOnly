@@ -14,7 +14,6 @@ import { libraryCategories, libraryContent, libraryStats } from "./libraryConten
 const featureFlags = {
   consistencyHub: false,
   fitness: false,
-  marketNews: false,
   ranks: false,
   consistencySignals: false,
   consistencyCopyTrading: false,
@@ -24,7 +23,6 @@ const featureFlags = {
 const pageFeatureMap = {
   "Consistency Hub": "consistencyHub",
   Fitness: "fitness",
-  "Market News": "marketNews",
   Ranks: "ranks",
 };
 
@@ -32,18 +30,10 @@ function featureEnabled(key) {
   return !key || featureFlags[key] !== false;
 }
 
-const archivedNav = [
-  ["Fitness", Dumbbell],
-  ["Consistency Hub", ListChecks],
-  ["Market News", Newspaper],
-  ["Ranks", Award],
-];
-
 const nav = [
   ["Today", LayoutDashboard], ["Goals & habits", Target], ["Network", Users],
   ["Messages", MessageCircle], ["Projects", FolderKanban], ["Schedule", CalendarDays],
-  ["Library", BookOpen],
-  ...archivedNav.filter(([label]) => featureEnabled(pageFeatureMap[label])),
+  ["Library", BookOpen], ["Market News", Newspaper],
 ];
 
 const goals = [];
