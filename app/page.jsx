@@ -287,24 +287,26 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
     setEditingMoveId(null);
     setPanel(type);
   };
-  const editMove = (motion) => {
-    setDraft(motion.title);
-    setFocus(motionCategories.find(category => motion.meta?.includes(category)) || "Business");
-    setEditingMoveId(motion.id);
-    setPanel("editMove");
-  };
-  const saveMove = (event) => {
-    event.preventDefault();
-    if (!draft.trim()) return;
-    setMotions(motions.map(motion => motion.id === editingMoveId ? { ...motion, title: draft.trim(), meta: `Today - ${focus}` } : motion));
-    toast("Move updated.");
-    setDraft("");
+  const clearMotionEdit = () => {
+    setMoveDraft("");
+    setMoveFocus("Business");
     setEditingMoveId(null);
+  };
+  const editMove = (motion) => {
+    setMoveDraft(motion.title);
+    setMoveFocus(motionCategories.find(category => motion.meta?.includes(category)) || "Business");
+    setEditingMoveId(motion.id);
     setPanel(null);
   };
   const saveNewMove = (event) => {
     event.preventDefault();
     if (!moveDraft.trim()) return;
+    if (editingMoveId) {
+      setMotions(motions.map(motion => motion.id === editingMoveId ? { ...motion, title: moveDraft.trim(), meta: `Today - ${moveFocus}` } : motion));
+      clearMotionEdit();
+      toast("Move updated.");
+      return;
+    }
     setMotions([{ id: Date.now(), title: moveDraft.trim(), meta: `Today - ${moveFocus}`, done: false }, ...motions]);
     setMoveDraft("");
     toast("Move added to today's motion.");
@@ -369,8 +371,8 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
               </div>}
             </span>
           </div>
-          <h2>Write the move that matters now</h2>
-          <p>Add one clear action for today. Keep it specific enough that you can finish it or honestly say you did not.</p>
+          <h2>{editingMoveId ? "Update this motion" : "Write the move that matters now"}</h2>
+          <p>{editingMoveId ? "Refine the action, then update it in the same space." : "Add one clear action for today. Keep it specific enough that you can finish it or honestly say you did not."}</p>
         </div>
         <div className="today-panel-fields">
           <input value={moveDraft} onChange={event => setMoveDraft(event.target.value)} placeholder="Example: Call five qualified prospects" />
@@ -379,24 +381,25 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
           </select>
         </div>
         <div className="today-panel-actions">
-          <button type="submit">Save move</button>
+          {editingMoveId && <button type="button" onClick={clearMotionEdit}>Cancel edit</button>}
+          <button type="submit">{editingMoveId ? "Update move" : "Save move"}</button>
         </div>
       </form>
-      {panel && <form className="today-panel" onSubmit={panel === "habit" ? saveHabit : saveMove}>
+      {panel === "habit" && <form className="today-panel" onSubmit={saveHabit}>
         <div>
-          <p className="eyebrow">{panel === "habit" ? "NEW DAILY STANDARD" : "EDIT MOVE"}</p>
-          <h2>{panel === "habit" ? "Build the routine" : "Tighten the action"}</h2>
-          <p>{panel === "habit" ? "Daily standards are repeatable actions you want to check off most days." : "A move is a specific action for today, not a permanent habit."}</p>
+          <p className="eyebrow">NEW DAILY STANDARD</p>
+          <h2>Build the routine</h2>
+          <p>Daily standards are repeatable actions you want to check off most days.</p>
         </div>
         <div className="today-panel-fields">
-          <input value={draft} onChange={event => setDraft(event.target.value)} autoFocus placeholder={panel === "habit" ? "Example: 45 minutes strength training" : "Example: Call five qualified prospects"} />
+          <input value={draft} onChange={event => setDraft(event.target.value)} autoFocus placeholder="Example: 45 minutes strength training" />
           <select value={focus} onChange={event => setFocus(event.target.value)} aria-label="Focus area">
             {motionCategories.map(category => <option key={category}>{category}</option>)}
           </select>
         </div>
         <div className="today-panel-actions">
           <button type="button" onClick={() => setPanel(null)}>Cancel</button>
-          <button type="submit">{panel === "habit" ? "Save standard" : panel === "editMove" ? "Update move" : "Save move"}</button>
+          <button type="submit">Save standard</button>
         </div>
       </form>}
       <WeekStrip/>
@@ -409,7 +412,7 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
               <div><strong>{motion.title}</strong><span>{motion.done ? <Check size={13}/> : <Clock3 size={13}/>} {motion.done ? "Completed today" : motion.meta}</span></div>
               <div className="motion-row-actions">
                 <button type="button" onClick={() => editMove(motion)} aria-label={`Edit ${motion.title}`}><Pencil size={15}/></button>
-                <button type="button" className="danger" onClick={() => { setMotions(motions.filter(item => item.id !== motion.id)); toast("Move removed."); }} aria-label={`Delete ${motion.title}`}><Trash2 size={15}/></button>
+                <button type="button" className="danger" onClick={() => { setMotions(motions.filter(item => item.id !== motion.id)); if (editingMoveId === motion.id) clearMotionEdit(); toast("Move removed."); }} aria-label={`Delete ${motion.title}`}><Trash2 size={15}/></button>
               </div>
             </div>) : <div className="empty-state compact"><strong>No moves set yet</strong><span>Use the box above to set your first motion for today.</span></div>}
             <div className="focus-foot"><div><span>{completedMotions} of {motions.length} moves complete · {baseExp} EXP earned today</span><div className="mini-progress"><i style={{width:`${motions.length ? completedMotions / motions.length * 100 : 0}%`}}/></div></div><p><Lock size={12}/> Only visible to you</p></div>
