@@ -50,6 +50,44 @@ const motionHelpExamples = [
   "Message three useful contacts and start one proper conversation."
 ];
 
+function localDateKey(date = new Date()) {
+  const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return offsetDate.toISOString().slice(0, 10);
+}
+
+function savedGoalFromRow(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    area: row.category || "BUSINESS",
+    evidence: row.evidence_count || 0,
+    exp: row.exp || 0,
+    date: "Active",
+    color: "gold",
+    today: row.today_action || "Choose one action for today",
+  };
+}
+
+function savedStandardFromRow(row) {
+  return {
+    id: row.id,
+    label: row.title,
+    meta: row.category || "Daily standard",
+    icon: "+",
+    done: row.completed_on === localDateKey(),
+  };
+}
+
+function savedMotionFromRow(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    meta: `Today - ${row.category || "Business"}`,
+    category: row.category || "Business",
+    done: Boolean(row.completed_at),
+  };
+}
+
 const SESSION_KEY = "motion-only-api-token";
 
 function apiBaseUrl() {
@@ -265,8 +303,10 @@ function WeekStrip() {
   return <div className="week-strip">{days.map(day => <div className={day.isToday ? "today" : ""} key={`${day.label}-${day.day}`}><span>{day.label}</span><strong>{day.day}</strong>{day.isToday ? <em/> : <i/>}</div>)}</div>
 }
 
-function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) {
+function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast, supabase, currentUser }) {
   const [motions, setMotions] = useState([]);
+  const [savedGoals, setSavedGoals] = useState([]);
+  const [standardRows, setStandardRows] = useState(habits);
   const [panel, setPanel] = useState(null);
   const [draft, setDraft] = useState("");
   const [focus, setFocus] = useState("Business");
@@ -275,12 +315,34 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
   const [editingMoveId, setEditingMoveId] = useState(null);
   const [motionHelpOpen, setMotionHelpOpen] = useState(false);
   const motionHelpRef = useRef(null);
-  const completed = habits.filter(h => h.done).length;
+  const completed = standardRows.filter(h => h.done).length;
   const completedMotions = motions.filter(m => m.done).length;
   const baseExp = completedMotions * 25 + completed * 10;
   const levelSize = 250;
   const currentLevel = Math.floor(baseExp / levelSize) + 1;
   const levelExp = baseExp % levelSize;
+  const canPersist = Boolean(supabase && currentUser?.id);
+  const todayKey = localDateKey();
+  useEffect(() => {
+    if (!canPersist) {
+      setStandardRows(habits);
+      setSavedGoals(goals);
+      return;
+    }
+    let cancelled = false;
+    Promise.all([
+      supabase.from("motion_today_motions").select("*").eq("user_id", currentUser.id).eq("scheduled_date", todayKey).order("created_at", { ascending: false }),
+      supabase.from("motion_goals").select("*").eq("user_id", currentUser.id).eq("status", "active").order("created_at", { ascending: false }).limit(6),
+      supabase.from("motion_daily_standards").select("*").eq("user_id", currentUser.id).order("created_at", { ascending: false }),
+    ]).then(([motionsResult, goalsResult, standardsResult]) => {
+      if (cancelled) return;
+      if (!motionsResult.error) setMotions((motionsResult.data || []).map(savedMotionFromRow));
+      if (!goalsResult.error) setSavedGoals((goalsResult.data || []).map(savedGoalFromRow));
+      if (!standardsResult.error) setStandardRows((standardsResult.data || []).map(savedStandardFromRow));
+      if (motionsResult.error || goalsResult.error || standardsResult.error) toast("Saved progress tables need the Supabase update.");
+    });
+    return () => { cancelled = true; };
+  }, [canPersist, currentUser?.id, supabase, todayKey]);
   const startPanel = (type) => {
     setDraft("");
     setFocus("Business");
@@ -302,26 +364,89 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
     event.preventDefault();
     if (!moveDraft.trim()) return;
     if (editingMoveId) {
-      setMotions(motions.map(motion => motion.id === editingMoveId ? { ...motion, title: moveDraft.trim(), meta: `Today - ${moveFocus}` } : motion));
+      const updatedMotion = { title: moveDraft.trim(), meta: `Today - ${moveFocus}`, category: moveFocus };
+      setMotions(motions.map(motion => motion.id === editingMoveId ? { ...motion, ...updatedMotion } : motion));
+      if (canPersist) {
+        supabase.from("motion_today_motions").update({ title: updatedMotion.title, category: moveFocus, updated_at: new Date().toISOString() }).eq("id", editingMoveId).eq("user_id", currentUser.id).then(({ error }) => {
+          if (error) toast("Move updated locally. Supabase update failed.");
+        });
+      }
       clearMotionEdit();
       toast("Move updated.");
       return;
     }
-    setMotions([{ id: Date.now(), title: moveDraft.trim(), meta: `Today - ${moveFocus}`, done: false }, ...motions]);
+    const newMotion = { id: Date.now(), title: moveDraft.trim(), meta: `Today - ${moveFocus}`, category: moveFocus, done: false };
+    setMotions([newMotion, ...motions]);
+    if (canPersist) {
+      supabase.from("motion_today_motions").insert({ user_id: currentUser.id, title: newMotion.title, category: moveFocus, scheduled_date: todayKey }).select().single().then(({ data, error }) => {
+        if (error) {
+          toast("Move saved locally. Supabase table needs updating.");
+          return;
+        }
+        if (data) setMotions(current => current.map(item => item.id === newMotion.id ? savedMotionFromRow(data) : item));
+      });
+    }
     setMoveDraft("");
     toast("Move added to today's motion.");
   };
   const saveHabit = (event) => {
     event.preventDefault();
     if (!draft.trim()) return;
-    addHabit({ label: draft.trim(), meta: "New daily standard", icon: "+", done: false });
+    const newStandard = { id: Date.now(), label: draft.trim(), meta: focus, icon: "+", done: false };
+    setStandardRows([newStandard, ...standardRows]);
+    if (canPersist) {
+      supabase.from("motion_daily_standards").insert({ user_id: currentUser.id, title: newStandard.label, category: focus }).select().single().then(({ data, error }) => {
+        if (error) {
+          toast("Standard saved locally. Supabase table needs updating.");
+          return;
+        }
+        if (data) setStandardRows(current => current.map(item => item.id === newStandard.id ? savedStandardFromRow(data) : item));
+      });
+    } else addHabit(newStandard);
     setDraft("");
     setPanel(null);
     toast("Daily standard added privately.");
   };
   const toggleMotion = (id) => {
-    setMotions(motions.map(motion => motion.id === id ? { ...motion, done: !motion.done } : motion));
+    const target = motions.find(motion => motion.id === id);
+    const nextDone = !target?.done;
+    setMotions(motions.map(motion => motion.id === id ? { ...motion, done: nextDone } : motion));
+    if (canPersist) {
+      supabase.from("motion_today_motions").update({ completed_at: nextDone ? new Date().toISOString() : null, updated_at: new Date().toISOString() }).eq("id", id).eq("user_id", currentUser.id).then(({ error }) => {
+        if (error) toast("Motion updated locally. Supabase update failed.");
+      });
+    }
     toast("Today's motion updated.");
+  };
+  const toggleStandard = (id) => {
+    const target = standardRows.find(standard => standard.id === id);
+    const nextDone = !target?.done;
+    setStandardRows(standardRows.map(standard => standard.id === id ? { ...standard, done: nextDone } : standard));
+    if (canPersist) {
+      supabase.from("motion_daily_standards").update({ completed_on: nextDone ? todayKey : null, updated_at: new Date().toISOString() }).eq("id", id).eq("user_id", currentUser.id).then(({ error }) => {
+        if (error) toast("Standard updated locally. Supabase update failed.");
+      });
+    } else toggleHabit(id);
+    toast("Standard updated privately.");
+  };
+  const deleteStandard = (id) => {
+    setStandardRows(standardRows.filter(standard => standard.id !== id));
+    if (canPersist) {
+      supabase.from("motion_daily_standards").delete().eq("id", id).eq("user_id", currentUser.id).then(({ error }) => {
+        if (error) toast("Standard removed locally. Supabase delete failed.");
+      });
+    } else deleteHabit(id);
+    toast("Daily standard deleted.");
+  };
+  const deleteMotion = (motion) => {
+    setMotions(motions.filter(item => item.id !== motion.id));
+    if (editingMoveId === motion.id) clearMotionEdit();
+    if (canPersist) {
+      supabase.from("motion_today_motions").delete().eq("id", motion.id).eq("user_id", currentUser.id).then(({ error }) => {
+        if (error) toast("Move removed locally. Supabase delete failed.");
+      });
+    }
+    toast("Move removed.");
   };
   useEffect(() => {
     if (!motionHelpOpen) return;
@@ -412,7 +537,7 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
               <div><strong>{motion.title}</strong><span>{motion.done ? <Check size={13}/> : <Clock3 size={13}/>} {motion.done ? "Completed today" : motion.meta}</span></div>
               <div className="motion-row-actions">
                 <button type="button" onClick={() => editMove(motion)} aria-label={`Edit ${motion.title}`}><Pencil size={15}/></button>
-                <button type="button" className="danger" onClick={() => { setMotions(motions.filter(item => item.id !== motion.id)); if (editingMoveId === motion.id) clearMotionEdit(); toast("Move removed."); }} aria-label={`Delete ${motion.title}`}><Trash2 size={15}/></button>
+                <button type="button" className="danger" onClick={() => deleteMotion(motion)} aria-label={`Delete ${motion.title}`}><Trash2 size={15}/></button>
               </div>
             </div>) : <div className="empty-state compact"><strong>No moves set yet</strong><span>Use the box above to set your first motion for today.</span></div>}
             <div className="focus-foot"><div><span>{completedMotions} of {motions.length} moves complete · {baseExp} EXP earned today</span><div className="mini-progress"><i style={{width:`${motions.length ? completedMotions / motions.length * 100 : 0}%`}}/></div></div><p><Lock size={12}/> Only visible to you</p></div>
@@ -421,7 +546,7 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
           <section className="goals-section">
             <div className="section-head"><div><p className="eyebrow">FORWARD PATH</p><h2>Goals in motion</h2></div><button className="link-btn" onClick={() => setActive("Goals & habits")}>View all <ArrowUpRight size={15}/></button></div>
             <div className="goal-grid">
-              {goals.length ? goals.map(g => <article className="goal-card" key={g.title}>
+              {savedGoals.length ? savedGoals.map(g => <article className="goal-card" key={g.id || g.title}>
                 <div className={`goal-icon ${g.color}`}><Goal size={18}/></div>
                 <OptionsMenu label="Goal options" items={[
                   { label: "Open goal", onClick: () => setActive("Goals & habits") },
@@ -438,13 +563,13 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
         <aside className="right-rail">
           <section className="card habits">
             <div className="section-head"><div><p className="eyebrow">CONSISTENCY ENGINE</p><h2>Daily standards</h2></div><button onClick={() => setActive("Goals & habits")} aria-label="Open daily standards"><ChevronRight size={18}/></button></div>
-            {habits.length ? habits.map(h => <div className="habit-row" key={h.id}>
-              <button className="habit habit-main" onClick={() => toggleHabit(h.id)}>
+            {standardRows.length ? standardRows.map(h => <div className="habit-row" key={h.id}>
+              <button className="habit habit-main" onClick={() => toggleStandard(h.id)}>
                 <span className="habit-symbol">{h.icon}</span><div><strong>{h.label}</strong><span>{h.meta}</span></div>
                 <i className={h.done ? "checked" : ""}>{h.done && <Check size={13}/>}</i>
               </button>
               <OptionsMenu label="Daily standard options" items={[
-                { label: "Delete", danger: true, onClick: () => deleteHabit(h.id) },
+                { label: "Delete", danger: true, onClick: () => deleteStandard(h.id) },
               ]}/>
             </div>) : <div className="empty-state compact"><strong>No daily standards yet</strong><span>Add only the repeatable actions you actually want to track.</span></div>}
             <button className="add-habit" onClick={() => startPanel("habit")}><Plus size={15}/> Add a discipline</button>
@@ -1327,7 +1452,7 @@ function OperationsPage({ toast }) {
   </div>;
 }
 
-function SimpleGoalsHabitsPage({ toast }) {
+function SimpleGoalsHabitsPage({ toast, supabase, currentUser }) {
   const [goalRows, setGoalRows] = useState(goals.map((goal, index) => ({
     ...goal,
     evidence: 0,
@@ -1336,35 +1461,96 @@ function SimpleGoalsHabitsPage({ toast }) {
   })));
   const [standardRows, setStandardRows] = useState(baseHabits);
   const [creating, setCreating] = useState(false);
-  const [draft, setDraft] = useState({ title: "", area: "BUSINESS", type: "Goal" });
+  const [draft, setDraft] = useState({ title: "", area: "Business", type: "Goal" });
   const [note, setNote] = useState("");
+  const [savedNote, setSavedNote] = useState("");
+  const canPersist = Boolean(supabase && currentUser?.id);
+  const todayKey = localDateKey();
   const completed = standardRows.filter(standard => standard.done).length;
   const goalEvidence = goalRows.reduce((sum, goal) => sum + (goal.evidence || 0), 0);
   const goalExp = goalRows.reduce((sum, goal) => sum + (goal.exp || 0), 0);
   const standardsExp = completed * 10;
+  useEffect(() => {
+    if (!canPersist) return;
+    let cancelled = false;
+    Promise.all([
+      supabase.from("motion_goals").select("*").eq("user_id", currentUser.id).eq("status", "active").order("created_at", { ascending: false }),
+      supabase.from("motion_daily_standards").select("*").eq("user_id", currentUser.id).order("created_at", { ascending: false }),
+      supabase.from("motion_daily_notes").select("*").eq("user_id", currentUser.id).eq("note_date", todayKey).maybeSingle(),
+    ]).then(([goalsResult, standardsResult, noteResult]) => {
+      if (cancelled) return;
+      if (!goalsResult.error) setGoalRows((goalsResult.data || []).map(savedGoalFromRow));
+      if (!standardsResult.error) setStandardRows((standardsResult.data || []).map(savedStandardFromRow));
+      if (!noteResult.error && noteResult.data?.note) setSavedNote(noteResult.data.note);
+      if (goalsResult.error || standardsResult.error || noteResult.error) toast("Saved progress tables need the Supabase update.");
+    });
+    return () => { cancelled = true; };
+  }, [canPersist, currentUser?.id, supabase, todayKey]);
   const toggleStandard = (id) => {
-    setStandardRows(standardRows.map(standard => standard.id === id ? { ...standard, done: !standard.done } : standard));
+    const target = standardRows.find(standard => standard.id === id);
+    const nextDone = !target?.done;
+    setStandardRows(standardRows.map(standard => standard.id === id ? { ...standard, done: nextDone } : standard));
+    if (canPersist) {
+      supabase.from("motion_daily_standards").update({ completed_on: nextDone ? todayKey : null, updated_at: new Date().toISOString() }).eq("id", id).eq("user_id", currentUser.id).then(({ error }) => {
+        if (error) toast("Standard updated locally. Supabase update failed.");
+      });
+    }
     toast("Standard updated privately.");
   };
   const logGoal = (index) => {
-    setGoalRows(goalRows.map((goal, goalIndex) => goalIndex === index ? { ...goal, evidence: (goal.evidence || 0) + 1, exp: (goal.exp || 0) + 25 } : goal));
+    const target = goalRows[index];
+    const nextEvidence = (target?.evidence || 0) + 1;
+    const nextExp = (target?.exp || 0) + 25;
+    setGoalRows(goalRows.map((goal, goalIndex) => goalIndex === index ? { ...goal, evidence: nextEvidence, exp: nextExp } : goal));
+    if (canPersist && target?.id) {
+      supabase.from("motion_goals").update({ evidence_count: nextEvidence, exp: nextExp, updated_at: new Date().toISOString() }).eq("id", target.id).eq("user_id", currentUser.id).then(({ error }) => {
+        if (error) toast("Evidence logged locally. Supabase update failed.");
+      });
+    }
     toast("Evidence logged. +25 EXP.");
   };
   const saveItem = (event) => {
     event.preventDefault();
     if (!draft.title.trim()) return;
     if (draft.type === "Habit") {
-      setStandardRows([{ id: Date.now(), label: draft.title.trim(), meta: "Daily standard", icon: "+", done: false }, ...standardRows]);
+      const newStandard = { id: Date.now(), label: draft.title.trim(), meta: draft.area, icon: "+", done: false };
+      setStandardRows([newStandard, ...standardRows]);
+      if (canPersist) {
+        supabase.from("motion_daily_standards").insert({ user_id: currentUser.id, title: newStandard.label, category: draft.area }).select().single().then(({ data, error }) => {
+          if (error) {
+            toast("Habit saved locally. Supabase table needs updating.");
+            return;
+          }
+          if (data) setStandardRows(current => current.map(item => item.id === newStandard.id ? savedStandardFromRow(data) : item));
+        });
+      }
     } else {
-      setGoalRows([{ title: draft.title.trim(), area: draft.area, evidence: 0, exp: 0, date: "Set review", color: "gold", today: "Choose one action for today" }, ...goalRows]);
+      const newGoal = { id: Date.now(), title: draft.title.trim(), area: draft.area, evidence: 0, exp: 0, date: "Active", color: "gold", today: "Choose one action for today" };
+      setGoalRows([newGoal, ...goalRows]);
+      if (canPersist) {
+        supabase.from("motion_goals").insert({ user_id: currentUser.id, title: newGoal.title, category: draft.area, today_action: newGoal.today }).select().single().then(({ data, error }) => {
+          if (error) {
+            toast("Goal saved locally. Supabase table needs updating.");
+            return;
+          }
+          if (data) setGoalRows(current => current.map(item => item.id === newGoal.id ? savedGoalFromRow(data) : item));
+        });
+      }
     }
-    setDraft({ title: "", area: "BUSINESS", type: "Goal" });
+    setDraft({ title: "", area: "Business", type: "Goal" });
     setCreating(false);
     toast(`${draft.type} added privately.`);
   };
   const saveNote = (event) => {
     event.preventDefault();
     if (!note.trim()) return;
+    const nextNote = note.trim();
+    setSavedNote(nextNote);
+    if (canPersist) {
+      supabase.from("motion_daily_notes").upsert({ user_id: currentUser.id, note_date: todayKey, note: nextNote, updated_at: new Date().toISOString() }, { onConflict: "user_id,note_date" }).then(({ error }) => {
+        if (error) toast("Note saved locally. Supabase update failed.");
+      });
+    }
     setNote("");
     toast("Daily note saved privately.");
   };
@@ -1375,7 +1561,7 @@ function SimpleGoalsHabitsPage({ toast }) {
     </section>
     {creating && <form className="simple-create" onSubmit={saveItem}>
       <select value={draft.type} onChange={event => setDraft({...draft, type:event.target.value})}><option>Goal</option><option>Habit</option></select>
-      <select value={draft.area} onChange={event => setDraft({...draft, area:event.target.value})}><option>BUSINESS</option><option>TRADING</option><option>FITNESS</option></select>
+      <select value={draft.area} onChange={event => setDraft({...draft, area:event.target.value})}>{motionCategories.map(category => <option key={category}>{category}</option>)}</select>
       <input autoFocus value={draft.title} onChange={event => setDraft({...draft, title:event.target.value})} placeholder="What are you committing to?" />
       <button type="button" onClick={() => setCreating(false)}>Cancel</button><button type="submit">Save</button>
     </form>}
@@ -1408,6 +1594,7 @@ function SimpleGoalsHabitsPage({ toast }) {
         </button>) : <div className="empty-state compact"><strong>No daily standards yet</strong><span>Add a habit from the button above when you know what you want to repeat.</span></div>}
         <form className="simple-note" onSubmit={saveNote}>
           <p className="eyebrow">PRIVATE NOTE</p>
+          {savedNote && <small>Saved today: {savedNote}</small>}
           <input value={note} onChange={event => setNote(event.target.value)} placeholder="One sentence: what moved today?" />
           <button type="submit">Save note</button>
         </form>
@@ -2523,9 +2710,9 @@ export default function App() {
     <div className="content-shell">
       <MotionTopbar setOpen={setMenuOpen} setActive={setActive} notifications={notifications} setNotifications={setNotifications} theme={theme} setTheme={setTheme} notificationSettings={notificationSettings} currentUser={currentUser} realBeta={realBeta} onLogout={logout}/>
       <div className="content">{visibleActive === "Today"
-        ? <Home habits={habits} toggleHabit={toggleHabit} addHabit={addHabit} deleteHabit={deleteHabit} setActive={setActive} toast={toast}/>
+        ? <Home habits={habits} toggleHabit={toggleHabit} addHabit={addHabit} deleteHabit={deleteHabit} setActive={setActive} toast={toast} supabase={supabase} currentUser={currentUser}/>
         : visibleActive === "Goals & habits"
-          ? <SimpleGoalsHabitsPage toast={toast}/>
+          ? <SimpleGoalsHabitsPage toast={toast} supabase={supabase} currentUser={currentUser}/>
         : visibleActive === "Schedule"
           ? <SchedulePage toast={toast}/>
         : visibleActive === "Fitness"

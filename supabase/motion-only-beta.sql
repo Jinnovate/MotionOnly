@@ -31,8 +31,56 @@ create table if not exists public.motion_invites (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.motion_today_motions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  category text not null default 'Business',
+  scheduled_date date not null default current_date,
+  completed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.motion_goals (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  category text not null default 'BUSINESS',
+  today_action text not null default 'Choose one action for today',
+  evidence_count integer not null default 0,
+  exp integer not null default 0,
+  status text not null default 'active',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.motion_daily_standards (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  category text not null default 'Lifestyle',
+  completed_on date,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.motion_daily_notes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  note_date date not null default current_date,
+  note text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, note_date)
+);
+
 alter table public.motion_profiles enable row level security;
 alter table public.motion_invites enable row level security;
+alter table public.motion_today_motions enable row level security;
+alter table public.motion_goals enable row level security;
+alter table public.motion_daily_standards enable row level security;
+alter table public.motion_daily_notes enable row level security;
 
 drop policy if exists "members can read own profile" on public.motion_profiles;
 create policy "members can read own profile"
@@ -69,6 +117,34 @@ with check (
     where id = auth.uid() and role = 'admin'
   )
 );
+
+drop policy if exists "members manage own today motions" on public.motion_today_motions;
+create policy "members manage own today motions"
+on public.motion_today_motions for all
+to authenticated
+using (user_id = auth.uid())
+with check (user_id = auth.uid());
+
+drop policy if exists "members manage own goals" on public.motion_goals;
+create policy "members manage own goals"
+on public.motion_goals for all
+to authenticated
+using (user_id = auth.uid())
+with check (user_id = auth.uid());
+
+drop policy if exists "members manage own daily standards" on public.motion_daily_standards;
+create policy "members manage own daily standards"
+on public.motion_daily_standards for all
+to authenticated
+using (user_id = auth.uid())
+with check (user_id = auth.uid());
+
+drop policy if exists "members manage own daily notes" on public.motion_daily_notes;
+create policy "members manage own daily notes"
+on public.motion_daily_notes for all
+to authenticated
+using (user_id = auth.uid())
+with check (user_id = auth.uid());
 
 create or replace function public.claim_motion_invite(invite_code text, invite_email text)
 returns table(role public.motion_role, email text)
