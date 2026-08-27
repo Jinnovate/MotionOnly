@@ -7,7 +7,7 @@ import {
   CalendarDays, Check, CheckCircle2, Award,
   Bot, ChevronDown, ChevronRight, Circle, Clock3, Copy, CreditCard, Download, Dumbbell, ExternalLink, Flag, FolderKanban, Gauge, Goal, GraduationCap, Heart,
   LayoutDashboard, Leaf, ListChecks, Lock, LogOut, Menu, MessageCircle, MoreHorizontal,
-  Newspaper, Palette, Pause, Play, Plus, Search, Settings, ShieldCheck, SlidersHorizontal, Sparkles, Star, Target, Timer, TrendingUp, UserRound, Users, Wallet, X, Zap
+  Newspaper, Palette, Pause, Pencil, Play, Plus, Search, Settings, ShieldCheck, SlidersHorizontal, Sparkles, Star, Target, Timer, Trash2, TrendingUp, UserRound, Users, Wallet, X, Zap
 } from "lucide-react";
 import { libraryCategories, libraryContent, libraryStats } from "./libraryContent";
 
@@ -406,11 +406,11 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
             <div className="section-head"><div><p className="eyebrow">TODAY'S MOTION</p><h2>Your moves for today</h2></div></div>
             {motions.length ? motions.map(motion => <div className="commitment" key={motion.id}>
               <button className={`round-check ${motion.done ? "done" : ""}`} onClick={() => toggleMotion(motion.id)}>{motion.done ? <CheckCircle2 size={21}/> : <Circle size={21}/>}</button>
-              <div><strong>{motion.title}</strong><span>{motion.done ? <Check size={13}/> : <Clock3 size={13}/>} {motion.done ? "Completed today" : motion.meta}</span></div><OptionsMenu label="Move options" items={[
-                { label: "Edit", onClick: () => editMove(motion) },
-                { label: "Move to schedule", onClick: () => { setActive("Schedule"); toast("Move opened in Schedule."); } },
-                { label: "Delete", danger: true, onClick: () => { setMotions(motions.filter(item => item.id !== motion.id)); toast("Move removed."); } },
-              ]}/>
+              <div><strong>{motion.title}</strong><span>{motion.done ? <Check size={13}/> : <Clock3 size={13}/>} {motion.done ? "Completed today" : motion.meta}</span></div>
+              <div className="motion-row-actions">
+                <button type="button" onClick={() => editMove(motion)} aria-label={`Edit ${motion.title}`}><Pencil size={15}/></button>
+                <button type="button" className="danger" onClick={() => { setMotions(motions.filter(item => item.id !== motion.id)); toast("Move removed."); }} aria-label={`Delete ${motion.title}`}><Trash2 size={15}/></button>
+              </div>
             </div>) : <div className="empty-state compact"><strong>No moves set yet</strong><span>Use the box above to set your first motion for today.</span></div>}
             <div className="focus-foot"><div><span>{completedMotions} of {motions.length} moves complete · {baseExp} EXP earned today</span><div className="mini-progress"><i style={{width:`${motions.length ? completedMotions / motions.length * 100 : 0}%`}}/></div></div><p><Lock size={12}/> Only visible to you</p></div>
           </section>
