@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   Activity, AlertTriangle, Archive, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmark,
   CalendarDays, Check, CheckCircle2, Award,
-  Bot, ChevronDown, ChevronRight, Circle, Clock3, Copy, CreditCard, Download, Dumbbell, ExternalLink, Flag, FolderKanban, Gauge, Goal, GraduationCap, Heart,
+  Bot, ChevronDown, ChevronRight, Circle, CircleHelp, Clock3, Copy, CreditCard, Download, Dumbbell, ExternalLink, Flag, FolderKanban, Gauge, Goal, GraduationCap, Heart,
   LayoutDashboard, Leaf, ListChecks, Lock, LogOut, Menu, MessageCircle, MoreHorizontal,
   Newspaper, Palette, Pause, Play, Plus, Search, Settings, ShieldCheck, SlidersHorizontal, Sparkles, Star, Target, Timer, TrendingUp, UserRound, Users, Wallet, X, Zap
 } from "lucide-react";
@@ -39,6 +39,16 @@ const nav = [
 const goals = [];
 
 const baseHabits = [];
+
+const motionCategories = ["Business", "Networking", "Lifestyle", "Learning", "Trading"];
+
+const motionHelpExamples = [
+  "Send 20 targeted business messages and log every reply.",
+  "Follow up every warm lead and write the next step for each one.",
+  "Review one trading setup and journal whether it meets the rules before acting.",
+  "Spend 45 minutes learning one skill that directly improves your income or discipline.",
+  "Message three useful contacts and start one proper conversation."
+];
 
 const SESSION_KEY = "motion-only-api-token";
 
@@ -263,6 +273,7 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
   const [moveDraft, setMoveDraft] = useState("");
   const [moveFocus, setMoveFocus] = useState("Business");
   const [editingMoveId, setEditingMoveId] = useState(null);
+  const [motionHelpOpen, setMotionHelpOpen] = useState(false);
   const completed = habits.filter(h => h.done).length;
   const completedMotions = motions.filter(m => m.done).length;
   const baseExp = completedMotions * 25 + completed * 10;
@@ -277,7 +288,7 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
   };
   const editMove = (motion) => {
     setDraft(motion.title);
-    setFocus(motion.meta?.includes("Trading") ? "Trading" : motion.meta?.includes("Fitness") ? "Fitness" : "Business");
+    setFocus(motionCategories.find(category => motion.meta?.includes(category)) || "Business");
     setEditingMoveId(motion.id);
     setPanel("editMove");
   };
@@ -327,16 +338,26 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
       </section>
       <form className="today-panel motion-entry" onSubmit={saveNewMove}>
         <div>
-          <p className="eyebrow">SET TODAY'S MOTION</p>
+          <div className="motion-title-row">
+            <p className="eyebrow">SET TODAY'S MOTION</p>
+            <button type="button" className="motion-help-trigger" onClick={() => setMotionHelpOpen(true)} aria-label="Explain today's motion"><CircleHelp size={15}/></button>
+          </div>
           <h2>Write the move that matters now</h2>
           <p>Add one clear action for today. Keep it specific enough that you can finish it or honestly say you did not.</p>
+          {motionHelpOpen && <div className="motion-help-pop" role="dialog" aria-label="Today's motion help">
+            <button type="button" className="motion-help-close" onClick={() => setMotionHelpOpen(false)} aria-label="Close today's motion help"><X size={14}/></button>
+            <strong>What this is for</strong>
+            <p>This is the main action that makes today count. It should be clear, controllable and finishable — not a vague goal or a full task list.</p>
+            <span>Good examples</span>
+            <ul>
+              {motionHelpExamples.map(example => <li key={example}>{example}</li>)}
+            </ul>
+          </div>}
         </div>
         <div className="today-panel-fields">
           <input value={moveDraft} onChange={event => setMoveDraft(event.target.value)} placeholder="Example: Call five qualified prospects" />
           <select value={moveFocus} onChange={event => setMoveFocus(event.target.value)} aria-label="Focus area">
-            <option>Business</option>
-            <option>Trading</option>
-            <option>Fitness</option>
+            {motionCategories.map(category => <option key={category}>{category}</option>)}
           </select>
         </div>
         <div className="today-panel-actions">
@@ -352,9 +373,7 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
         <div className="today-panel-fields">
           <input value={draft} onChange={event => setDraft(event.target.value)} autoFocus placeholder={panel === "habit" ? "Example: 45 minutes strength training" : "Example: Call five qualified prospects"} />
           <select value={focus} onChange={event => setFocus(event.target.value)} aria-label="Focus area">
-            <option>Business</option>
-            <option>Trading</option>
-            <option>Fitness</option>
+            {motionCategories.map(category => <option key={category}>{category}</option>)}
           </select>
         </div>
         <div className="today-panel-actions">
