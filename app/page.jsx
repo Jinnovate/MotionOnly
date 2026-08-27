@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   Activity, AlertTriangle, Archive, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmark,
   CalendarDays, Check, CheckCircle2, Award,
-  Bot, ChevronDown, ChevronRight, Circle, CircleHelp, Clock3, Copy, CreditCard, Download, Dumbbell, ExternalLink, Flag, FolderKanban, Gauge, Goal, GraduationCap, Heart,
+  Bot, ChevronDown, ChevronRight, Circle, Clock3, Copy, CreditCard, Download, Dumbbell, ExternalLink, Flag, FolderKanban, Gauge, Goal, GraduationCap, Heart,
   LayoutDashboard, Leaf, ListChecks, Lock, LogOut, Menu, MessageCircle, MoreHorizontal,
   Newspaper, Palette, Pause, Play, Plus, Search, Settings, ShieldCheck, SlidersHorizontal, Sparkles, Star, Target, Timer, TrendingUp, UserRound, Users, Wallet, X, Zap
 } from "lucide-react";
@@ -274,6 +274,7 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
   const [moveFocus, setMoveFocus] = useState("Business");
   const [editingMoveId, setEditingMoveId] = useState(null);
   const [motionHelpOpen, setMotionHelpOpen] = useState(false);
+  const motionHelpRef = useRef(null);
   const completed = habits.filter(h => h.done).length;
   const completedMotions = motions.filter(m => m.done).length;
   const baseExp = completedMotions * 25 + completed * 10;
@@ -320,6 +321,21 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
     setMotions(motions.map(motion => motion.id === id ? { ...motion, done: !motion.done } : motion));
     toast("Today's motion updated.");
   };
+  useEffect(() => {
+    if (!motionHelpOpen) return;
+    const closeHelp = (event) => {
+      if (!motionHelpRef.current?.contains(event.target)) setMotionHelpOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setMotionHelpOpen(false);
+    };
+    document.addEventListener("mousedown", closeHelp);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeHelp);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [motionHelpOpen]);
   return (
     <>
       <section className="welcome">
@@ -340,19 +356,21 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast }) 
         <div>
           <div className="motion-title-row">
             <p className="eyebrow">SET TODAY'S MOTION</p>
-            <button type="button" className="motion-help-trigger" onClick={() => setMotionHelpOpen(true)} aria-label="Explain today's motion"><CircleHelp size={15}/></button>
+            <span className="motion-help-wrap" ref={motionHelpRef}>
+              <button type="button" className="motion-help-trigger" onClick={() => setMotionHelpOpen(open => !open)} aria-label="Explain today's motion">?</button>
+              {motionHelpOpen && <div className="motion-help-pop" role="dialog" aria-label="Today's motion help">
+                <button type="button" className="motion-help-close" onClick={() => setMotionHelpOpen(false)} aria-label="Close today's motion help"><X size={14}/></button>
+                <strong>What this is for</strong>
+                <p>This is the main action that makes today count. It should be clear, controllable and finishable — not a vague goal or a full task list.</p>
+                <span>Good examples</span>
+                <ul>
+                  {motionHelpExamples.map(example => <li key={example}>{example}</li>)}
+                </ul>
+              </div>}
+            </span>
           </div>
           <h2>Write the move that matters now</h2>
           <p>Add one clear action for today. Keep it specific enough that you can finish it or honestly say you did not.</p>
-          {motionHelpOpen && <div className="motion-help-pop" role="dialog" aria-label="Today's motion help">
-            <button type="button" className="motion-help-close" onClick={() => setMotionHelpOpen(false)} aria-label="Close today's motion help"><X size={14}/></button>
-            <strong>What this is for</strong>
-            <p>This is the main action that makes today count. It should be clear, controllable and finishable — not a vague goal or a full task list.</p>
-            <span>Good examples</span>
-            <ul>
-              {motionHelpExamples.map(example => <li key={example}>{example}</li>)}
-            </ul>
-          </div>}
         </div>
         <div className="today-panel-fields">
           <input value={moveDraft} onChange={event => setMoveDraft(event.target.value)} placeholder="Example: Call five qualified prospects" />
