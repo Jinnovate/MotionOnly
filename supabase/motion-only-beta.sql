@@ -14,10 +14,17 @@ create table if not exists public.motion_profiles (
   email text not null,
   display_name text not null,
   role public.motion_role not null default 'member',
+  founding_role text not null default 'none',
+  founding_status boolean not null default false,
+  founding_notes text not null default '',
   onboarding_completed boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.motion_profiles add column if not exists founding_role text not null default 'none';
+alter table public.motion_profiles add column if not exists founding_status boolean not null default false;
+alter table public.motion_profiles add column if not exists founding_notes text not null default '';
 
 create table if not exists public.motion_invites (
   id uuid primary key default gen_random_uuid(),
@@ -95,6 +102,7 @@ create table if not exists public.motion_room_messages (
   room_id uuid not null references public.motion_rooms(id) on delete cascade,
   author_id uuid not null references auth.users(id) on delete cascade,
   author_name text not null default 'Motion Only member',
+  author_founding_role text not null default '',
   body text not null,
   exp_awarded integer not null default 0,
   quality_label text not null default 'No EXP',
@@ -104,6 +112,8 @@ create table if not exists public.motion_room_messages (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.motion_room_messages add column if not exists author_founding_role text not null default '';
 
 create unique index if not exists motion_rooms_kind_title_key on public.motion_rooms (kind, lower(title));
 
@@ -116,11 +126,29 @@ alter table public.motion_daily_notes enable row level security;
 alter table public.motion_rooms enable row level security;
 alter table public.motion_room_messages enable row level security;
 
+create or replace function public.current_motion_role()
+returns public.motion_role
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select role from public.motion_profiles where id = auth.uid();
+$$;
+
+grant execute on function public.current_motion_role() to authenticated;
+
 drop policy if exists "members can read own profile" on public.motion_profiles;
 create policy "members can read own profile"
 on public.motion_profiles for select
 to authenticated
 using (id = auth.uid());
+
+drop policy if exists "admins can read all profiles" on public.motion_profiles;
+create policy "admins can read all profiles"
+on public.motion_profiles for select
+to authenticated
+using (public.current_motion_role() in ('admin', 'moderator'));
 
 drop policy if exists "members can create own profile" on public.motion_profiles;
 create policy "members can create own profile"
@@ -129,11 +157,13 @@ to authenticated
 with check (id = auth.uid());
 
 drop policy if exists "members can update own profile" on public.motion_profiles;
-create policy "members can update own profile"
+
+drop policy if exists "admins can update profile roles" on public.motion_profiles;
+create policy "admins can update profile roles"
 on public.motion_profiles for update
 to authenticated
-using (id = auth.uid())
-with check (id = auth.uid());
+using (public.current_motion_role() = 'admin')
+with check (public.current_motion_role() = 'admin');
 
 drop policy if exists "admins can manage invites" on public.motion_invites;
 create policy "admins can manage invites"

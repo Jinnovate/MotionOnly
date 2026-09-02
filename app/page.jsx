@@ -26,6 +26,54 @@ const pageFeatureMap = {
   Ranks: "ranks",
 };
 
+const foundingTeamRoles = [
+  {
+    key: "none",
+    label: "No founding role",
+    summary: "Standard Motion Only member account.",
+    expectations: [],
+  },
+  {
+    key: "community_lead",
+    label: "Community Lead",
+    summary: "Welcomes new members and starts useful conversations that keep the network alive.",
+    expectations: ["Welcome new members", "Start a few useful conversations each week", "Spot where members need direction"],
+  },
+  {
+    key: "engagement_lead",
+    label: "Engagement Lead",
+    summary: "Creates light weekly activity that gets members participating without making the app noisy.",
+    expectations: ["Run one challenge, poll or competition each week", "Encourage useful replies", "Feed back what gets people moving"],
+  },
+  {
+    key: "education_lead",
+    label: "Education Lead",
+    summary: "Finds useful mentors, school ideas and course topics that fit Motion Only.",
+    expectations: ["Suggest mentor/school opportunities", "Collect useful learning topics", "Flag weak or low-quality education ideas"],
+  },
+  {
+    key: "networking_lead",
+    label: "Networking Lead",
+    summary: "Connects members who could help each other make progress.",
+    expectations: ["Make useful introductions", "Look for collaboration opportunities", "Help members find the right people"],
+  },
+  {
+    key: "member_success_lead",
+    label: "Member Success Lead",
+    summary: "Checks in with new or quieter members and reports what people need from the platform.",
+    expectations: ["Check in with new members", "Notice quiet members", "Share feedback from the member experience"],
+  },
+];
+
+function foundingRoleFor(key) {
+  return foundingTeamRoles.find(role => role.key === key) || foundingTeamRoles[0];
+}
+
+function foundingLabelFor(key) {
+  const role = foundingRoleFor(key);
+  return role.key === "none" ? "" : role.label;
+}
+
 function featureEnabled(key) {
   return !key || featureFlags[key] !== false;
 }
@@ -109,6 +157,7 @@ function messageFromRoomRow(row) {
     row.created_at ? new Date(row.created_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "now",
     { eligible: Boolean(row.exp_awarded), exp: row.exp_awarded || 0, label: row.exp_awarded ? `+${row.exp_awarded} EXP` : "No EXP", reason: row.quality_reason || "" },
     row.id,
+    row.author_founding_role || row.motion_profiles?.founding_role || "",
   ];
 }
 
@@ -130,9 +179,23 @@ function profileFromSupabaseUser(user) {
     id: user?.id,
     email: user?.email,
     role: user?.user_metadata?.role || "member",
+    foundingRole: user?.user_metadata?.founding_role || "none",
     displayName: name,
     display_name: name,
     onboardingCompleted: Boolean(user?.user_metadata?.onboarding_completed),
+  };
+}
+
+function profileFromRow(row, fallback = {}) {
+  return {
+    ...fallback,
+    id: row?.id || fallback?.id,
+    email: row?.email || fallback?.email,
+    role: row?.role || fallback?.role || "member",
+    foundingRole: row?.founding_role || fallback?.foundingRole || "none",
+    displayName: row?.display_name || fallback?.displayName || fallback?.display_name || "Motion Only member",
+    display_name: row?.display_name || fallback?.display_name || fallback?.displayName || "Motion Only member",
+    onboardingCompleted: Boolean(row?.onboarding_completed ?? fallback?.onboardingCompleted),
   };
 }
 
@@ -142,6 +205,26 @@ function displayNameFor(user) {
 
 function initialsFor(name = "Joel Gilbert") {
   return name.split(" ").filter(Boolean).slice(0, 2).map(part => part[0]?.toUpperCase()).join("") || "MO";
+}
+
+function FoundingTeamPanel({ currentUser }) {
+  const role = foundingRoleFor(currentUser?.foundingRole);
+  if (role.key === "none") return null;
+  return <section className="founding-panel card">
+    <div>
+      <p className="eyebrow">FOUNDING TEAM</p>
+      <h2>{role.label}</h2>
+      <p>{role.summary}</p>
+    </div>
+    <div className="founding-rewards">
+      {["Permanent Founding Team status", "Visible badge/profile status", "Direct access to the core team", "Input into how Motion Only is built", "Priority for future opportunities"].map(item => <span key={item}><Award size={14}/>{item}</span>)}
+    </div>
+    <div className="founding-expectations">
+      <strong>Simple weekly expectations</strong>
+      {role.expectations.map(item => <span key={item}><Check size={13}/>{item}</span>)}
+      <small>Suggested contribution: 2–3 hours per week, flexible.</small>
+    </div>
+  </section>;
 }
 
 async function apiRequest(path, { apiBase, token, ...options } = {}) {
@@ -203,6 +286,7 @@ function Sidebar({ active, setActive, open, setOpen, currentUser, onLogout, real
   const name = displayNameFor(currentUser);
   const initials = initialsFor(name);
   const canUseOperations = !realBeta || ["admin", "moderator"].includes(currentUser?.role);
+  const foundingLabel = foundingLabelFor(currentUser?.foundingRole);
   return (
     <>
       {open && <button className="scrim" onClick={() => setOpen(false)} aria-label="Close menu" />}
@@ -234,7 +318,7 @@ function Sidebar({ active, setActive, open, setOpen, currentUser, onLogout, real
         </div>
         <div className="profile-mini">
           <div className="avatar">{initials}</div>
-          <div><strong>{name}</strong><span>{realBeta ? `${currentUser?.role || "member"} account` : "Member account"}</span></div>
+          <div><strong>{name}</strong><span>{foundingLabel || (realBeta ? `${currentUser?.role || "member"} account` : "Member account")}</span></div>
           <OptionsMenu label="Profile options" items={[
             { label: "Open profile", onClick: () => { setActive("Settings"); setOpen(false); } },
             { label: "Privacy settings", onClick: () => { setActive("Settings"); setOpen(false); } },
@@ -271,6 +355,7 @@ function MotionTopbar({ setOpen, setActive, notifications, setNotifications, the
     setThemeOpen(false);
   };
   const initials = initialsFor(displayNameFor(currentUser));
+  const foundingLabel = foundingLabelFor(currentUser?.foundingRole);
   const openSettings = (message) => {
     setProfileOpen(false);
     setActive("Settings");
@@ -292,7 +377,7 @@ function MotionTopbar({ setOpen, setActive, notifications, setNotifications, the
         <div className="profile-control" ref={profileRef}>
           <button className="avatar top-avatar" onClick={(event) => { event.stopPropagation(); setProfileOpen(!profileOpen); }} aria-label="Open profile menu">{initials}</button>
           {profileOpen && <div className="profile-menu">
-            <div className="profile-menu-head"><span className="avatar">{initials}</span><p><strong>{displayNameFor(currentUser)}</strong><small>{realBeta ? `${currentUser?.role || "member"} account` : "Member account"}</small></p></div>
+            <div className="profile-menu-head"><span className="avatar">{initials}</span><p><strong>{displayNameFor(currentUser)}</strong><small>{foundingLabel || (realBeta ? `${currentUser?.role || "member"} account` : "Member account")}</small></p></div>
             <button onClick={() => openSettings("Profile opened.")}><Users size={15}/><span>Profile</span></button>
             <button onClick={() => openSettings("Account settings opened.")}><Settings size={15}/><span>Account settings</span></button>
             <button onClick={() => openSettings("Privacy settings opened.")}><Lock size={15}/><span>Privacy</span></button>
@@ -503,6 +588,7 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast, su
           <span><strong>Evidence</strong>Progress must be logged or completed</span>
         </div>
       </section>
+      <FoundingTeamPanel currentUser={currentUser}/>
       <form className="today-panel motion-entry" onSubmit={saveNewMove}>
         <div>
           <div className="motion-title-row">
@@ -1176,7 +1262,7 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
     const loadMessages = () => {
       supabase
         .from("motion_room_messages")
-        .select("id, room_id, author_id, author_name, body, exp_awarded, quality_label, quality_reason, created_at, motion_profiles(display_name)")
+        .select("id, room_id, author_id, author_name, author_founding_role, body, exp_awarded, quality_label, quality_reason, created_at, motion_profiles(display_name, founding_role)")
         .eq("room_id", opened.id)
         .is("deleted_at", null)
         .order("created_at", { ascending: true })
@@ -1280,12 +1366,13 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
           room_id: activeRoomId,
           author_id: currentUser.id,
           author_name: displayNameFor(currentUser),
+          author_founding_role: foundingLabelFor(currentUser.foundingRole),
           body,
           exp_awarded: quality.eligible ? quality.exp : 0,
           quality_label: quality.label,
           quality_reason: quality.reason,
         })
-        .select("id, room_id, author_id, author_name, body, exp_awarded, quality_label, quality_reason, created_at, motion_profiles(display_name)")
+        .select("id, room_id, author_id, author_name, author_founding_role, body, exp_awarded, quality_label, quality_reason, created_at, motion_profiles(display_name, founding_role)")
         .single();
       if (error) {
         toast("Message could not be saved. Check the Supabase chat update.");
@@ -1363,9 +1450,9 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
                 <span><strong>0</strong> comments given today</span>
                 <span><strong>0</strong> content tips pinned</span>
               </div>}
-              {roomMessages.length ? roomMessages.map(([author, body, time, quality], index) => <article className="room-message" key={`${author}-${index}`}>
+              {roomMessages.length ? roomMessages.map(([author, body, time, quality, id, foundingRole], index) => <article className="room-message" key={`${id || author}-${index}`}>
                 <i>{author.split(" ").map(part => part[0]).join("").slice(0,2)}</i>
-                <div><header><strong>{author}</strong><span>{time}</span></header><p>{body}</p>{quality && <small className={`quality-badge ${quality.eligible ? "eligible" : ""}`}>{quality.label}</small>}</div>
+                <div><header><strong>{author}{foundingRole && <em className="founding-badge">{foundingRole}</em>}</strong><span>{time}</span></header><p>{body}</p>{quality && <small className={`quality-badge ${quality.eligible ? "eligible" : ""}`}>{quality.label}</small>}</div>
               </article>) : <div className="empty-state compact"><strong>No messages yet</strong><span>Start the conversation when there is something useful to share.</span></div>}
               <form className="room-composer" onSubmit={send}>
                 <input value={draft} onChange={event => setDraft(event.target.value)} placeholder={isConversation ? "Write a private reply..." : isSocialRoom ? "Share a post link, support request or content tip..." : "Add to the room..."} />
@@ -1493,7 +1580,7 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
 
 const adminMembers = [];
 
-function OperationsPage({ toast }) {
+function OperationsPage({ toast, supabase, currentUser }) {
   const controls = [
     { key:"members", title:"Members", meta:"No members yet", Icon:Users, description:"View member names, status, focus and account health.", stat:"Ready for invites" },
     { key:"invitations", title:"Invitations", meta:"No pending invites", Icon:Archive, description:"Issue, expire and review private invitations to the network.", stat:"Invite-only" },
@@ -1504,14 +1591,64 @@ function OperationsPage({ toast }) {
   const [activeControl, setActiveControl] = useState(null);
   const [memberRows, setMemberRows] = useState(adminMembers.map((name, index) => ({
     name,
+    id: "",
+    email: "",
     role: index === 0 ? "Admin" : index % 9 === 0 ? "Moderator" : "Member",
+    foundingRole: "none",
     status: index % 11 === 0 && index !== 0 ? "Watch" : "Active",
     focus: ["Business","Trading","Fitness"][index % 3],
   })));
   const [invites, setInvites] = useState([]);
-  const setMemberRole = (index, role) => {
-    setMemberRows(memberRows.map((member, rowIndex) => rowIndex === index ? { ...member, role } : member));
-    toast(`${memberRows[index].name} role updated.`);
+  const canPersistAdmin = Boolean(supabase && currentUser?.id);
+  useEffect(() => {
+    if (!canPersistAdmin) return;
+    let cancelled = false;
+    supabase
+      .from("motion_profiles")
+      .select("id, email, display_name, role, founding_role, founding_status, updated_at")
+      .order("created_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          toast("Member roles need admin access in Supabase.");
+          return;
+        }
+        setMemberRows((data || []).map(row => ({
+          id: row.id,
+          email: row.email,
+          name: row.display_name || row.email,
+          role: row.role || "member",
+          foundingRole: row.founding_role || "none",
+          status: row.founding_status ? "Founding Team" : "Active",
+          focus: foundingLabelFor(row.founding_role) || "Member",
+        })));
+      });
+    return () => { cancelled = true; };
+  }, [canPersistAdmin, currentUser?.id, supabase]);
+  const setMemberRole = async (index, role) => {
+    const member = memberRows[index];
+    setMemberRows(memberRows.map((row, rowIndex) => rowIndex === index ? { ...row, role } : row));
+    if (canPersistAdmin && member?.id) {
+      const { error } = await supabase.from("motion_profiles").update({ role, updated_at: new Date().toISOString() }).eq("id", member.id);
+      if (error) {
+        toast("Role could not be saved. Check admin permissions.");
+        return;
+      }
+    }
+    toast(`${member.name} access role updated.`);
+  };
+  const setFoundingRole = async (index, foundingRole) => {
+    const member = memberRows[index];
+    const foundingStatus = foundingRole !== "none";
+    setMemberRows(memberRows.map((row, rowIndex) => rowIndex === index ? { ...row, foundingRole, status: foundingStatus ? "Founding Team" : "Active", focus: foundingLabelFor(foundingRole) || "Member" } : row));
+    if (canPersistAdmin && member?.id) {
+      const { error } = await supabase.from("motion_profiles").update({ founding_role: foundingRole, founding_status: foundingStatus, updated_at: new Date().toISOString() }).eq("id", member.id);
+      if (error) {
+        toast("Founding Team role could not be saved. Check admin permissions.");
+        return;
+      }
+    }
+    toast(`${member.name} founding role updated.`);
   };
   const current = activeControl ? controls.find(control => control.key === activeControl) : null;
 
@@ -1519,9 +1656,12 @@ function OperationsPage({ toast }) {
     if (!current) return null;
     if (current.key === "members") return <div className="admin-table">
       {memberRows.length ? memberRows.map((member, index) => <div className="admin-row" key={member.name}>
-        <span><strong>{member.name}</strong><small>{member.focus} - {member.status}</small></span>
+        <span><strong>{member.name}</strong><small>{member.email ? `${member.email} - ` : ""}{member.focus} - {member.status}</small></span>
         <select value={member.role} onChange={event => setMemberRole(index, event.target.value)}>
-          <option>Member</option><option>Moderator</option><option>Admin</option>
+          <option value="member">Member</option><option value="moderator">Moderator</option><option value="admin">Admin</option>
+        </select>
+        <select value={member.foundingRole} onChange={event => setFoundingRole(index, event.target.value)}>
+          {foundingTeamRoles.map(role => <option key={role.key} value={role.key}>{role.label}</option>)}
         </select>
         <button onClick={() => toast(`${member.name} profile opened.`)}>Open</button>
       </div>) : <div className="empty-state compact"><strong>No members yet</strong><span>Accepted invitations will appear here.</span></div>}
@@ -1536,7 +1676,12 @@ function OperationsPage({ toast }) {
         <input name="email" placeholder="member@email.com" /><select name="role"><option>Member</option><option>Moderator</option><option>Admin</option></select><button type="submit">Create invite</button>
       </form>
     </div>;
-    if (current.key === "roles") return <div className="role-grid">
+    if (current.key === "roles") return <div className="role-grid founding-role-grid">
+      {foundingTeamRoles.filter(role => role.key !== "none").map(role => <section key={role.key}>
+        <h3>{role.label}</h3>
+        <p>{role.summary}</p>
+        {role.expectations.map(item => <label key={item}><input type="checkbox" checked readOnly />{item}</label>)}
+      </section>)}
       {["Member","Moderator","Admin","Project lead"].map(role => <section key={role}>
         <h3>{role}</h3>
         {["View private app","Create personal goals","Create rooms","Moderate reports","Invite members","Change roles"].map((permission, index) => (
@@ -2787,19 +2932,28 @@ export default function App() {
   useEffect(() => {
     if (!supabase) return;
     let cancelled = false;
+    const applySupabaseSession = async (session) => {
+      const user = session?.user;
+      setSessionToken(session?.access_token || "");
+      if (!user) {
+        setCurrentUser(null);
+        setAuthChecked(true);
+        return;
+      }
+      const fallback = profileFromSupabaseUser(user);
+      const { data: profile } = await supabase.from("motion_profiles").select("*").eq("id", user.id).maybeSingle();
+      if (!cancelled) {
+        setCurrentUser(profile ? profileFromRow(profile, fallback) : fallback);
+        setAuthChecked(true);
+      }
+    };
     setAuthChecked(false);
     supabase.auth.getSession().then(({ data }) => {
       if (cancelled) return;
-      const user = data.session?.user;
-      setSessionToken(data.session?.access_token || "");
-      setCurrentUser(user ? profileFromSupabaseUser(user) : null);
-      setAuthChecked(true);
+      applySupabaseSession(data.session);
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      const user = session?.user;
-      setSessionToken(session?.access_token || "");
-      setCurrentUser(user ? profileFromSupabaseUser(user) : null);
-      setAuthChecked(true);
+      applySupabaseSession(session);
     });
     return () => {
       cancelled = true;
@@ -2851,7 +3005,7 @@ export default function App() {
         : visibleActive === "Ranks"
           ? <RanksPage/>
         : visibleActive === "Admin"
-          ? <OperationsPage toast={toast}/>
+          ? <OperationsPage toast={toast} supabase={supabase} currentUser={currentUser}/>
         : visibleActive === "Settings"
           ? <SettingsPrivacyPage toast={toast} notificationSettings={notificationSettings} setNotificationSettings={setNotificationSettings} theme={theme} setTheme={setTheme}/>
           : <FeaturePage key={visibleActive} name={visibleActive} toast={toast}/>}
