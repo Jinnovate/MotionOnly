@@ -88,6 +88,30 @@ function savedMotionFromRow(row) {
   };
 }
 
+function spaceFromRoomRow(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    meta: `${row.room_type || "Room"} - ${row.access || "All members"}`,
+    Icon: row.room_type === "Direct" ? MessageCircle : row.room_type === "Social support" ? Sparkles : Users,
+    description: row.description || "Private Motion Only room for focused member discussion.",
+    stat: row.access || "Private by default",
+    roomType: row.room_type || "Topic discussion",
+    access: row.access || "All members",
+  };
+}
+
+function messageFromRoomRow(row) {
+  const name = row.motion_profiles?.display_name || row.author_name || "Motion Only member";
+  return [
+    name,
+    row.body,
+    row.created_at ? new Date(row.created_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "now",
+    { eligible: Boolean(row.exp_awarded), exp: row.exp_awarded || 0, label: row.exp_awarded ? `+${row.exp_awarded} EXP` : "No EXP", reason: row.quality_reason || "" },
+    row.id,
+  ];
+}
+
 const SESSION_KEY = "motion-only-api-token";
 
 function apiBaseUrl() {
@@ -1070,7 +1094,7 @@ function evaluateContribution(text = "", sectionName = "Network", existingMessag
   return { eligible: false, exp: 0, label: "Needs signal", reason: "Long enough, but add a question, result, lesson, blocker, decision, or next step." };
 }
 
-function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettings }) {
+function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettings, supabase, currentUser }) {
   const pageCopy = pages[name];
   const sectionName = name === "Network" ? "Network" : name;
   const data = {
@@ -1122,7 +1146,61 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
     outcome: "",
     review: "Weekly review",
   });
+  const activeRoomId = opened?.id || selected?.id || null;
   const draftQuality = evaluateContribution(draft, sectionName, messages);
+  useEffect(() => {
+    if (!supabase || !currentUser || !["Network", "Messages"].includes(sectionName)) return;
+    let cancelled = false;
+    const kind = sectionName === "Messages" ? "direct" : "network";
+    supabase
+      .from("motion_rooms")
+      .select("*")
+      .eq("kind", kind)
+      .order("created_at", { ascending: true })
+      .then(({ data: rows, error }) => {
+        if (cancelled) return;
+        if (error) {
+          toast("Chat rooms need the Supabase chat update.");
+          return;
+        }
+        const nextItems = (rows || []).map(spaceFromRoomRow);
+        setItems(nextItems);
+        setSelected(current => current || nextItems[0] || null);
+      });
+    return () => { cancelled = true; };
+  }, [supabase, currentUser?.id, sectionName]);
+
+  useEffect(() => {
+    if (!supabase || !currentUser || !opened?.id || !["Network", "Messages"].includes(sectionName)) return;
+    let cancelled = false;
+    const loadMessages = () => {
+      supabase
+        .from("motion_room_messages")
+        .select("id, room_id, author_id, author_name, body, exp_awarded, quality_label, quality_reason, created_at, motion_profiles(display_name)")
+        .eq("room_id", opened.id)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: true })
+        .limit(100)
+        .then(({ data: rows, error }) => {
+          if (cancelled) return;
+          if (error) {
+            toast("Messages need the Supabase chat update.");
+            return;
+          }
+          setMessages((rows || []).map(messageFromRoomRow));
+        });
+    };
+    loadMessages();
+    const channel = supabase
+      .channel(`motion-room-${opened.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "motion_room_messages", filter: `room_id=eq.${opened.id}` }, loadMessages)
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, currentUser?.id, opened?.id, sectionName]);
+
   const createItem = () => {
     if (sectionName === "Network") {
       setCreatingRoom(true);
@@ -1134,7 +1212,7 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
     setSelected(created);
     toast(`${title} created.`);
   };
-  const submitRoom = (event) => {
+  const submitRoom = async (event) => {
     event.preventDefault();
     const title = roomDraft.title.trim() || "New private room";
     const purpose = roomDraft.purpose.trim() || "Private Motion Only room for focused member discussion.";
@@ -1145,6 +1223,29 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
       description: purpose,
       stat: `${roomDraft.type} - Private by default`,
     };
+    if (supabase && currentUser) {
+      const { data: row, error } = await supabase
+        .from("motion_rooms")
+        .insert({
+          title,
+          description: purpose,
+          kind: "network",
+          room_type: roomDraft.type,
+          access: roomDraft.access,
+          posting_rules: roomDraft.posting,
+          moderation: roomDraft.moderation,
+          created_by: currentUser.id,
+        })
+        .select()
+        .single();
+      if (error) {
+        toast("Room could not be created. Check the chat tables/policies.");
+        return;
+      }
+      created.id = row.id;
+      created.meta = `${row.room_type} - ${row.access}`;
+      created.stat = row.access;
+    }
     setItems([created, ...items]);
     setSelected(created);
     setCreatingRoom(false);
@@ -1167,11 +1268,33 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
     setWorkspaceDraft({ title: "", purpose: "", access: "Invitation only", type: "Accountability sprint", outcome: "", review: "Weekly review" });
     toast(`${title} workspace created.`);
   };
-  const send = (event) => {
+  const send = async (event) => {
     event.preventDefault();
     if (!draft.trim()) return;
     const quality = evaluateContribution(draft, sectionName, messages);
-    setMessages([...messages, ["Joel Gilbert", draft.trim(), "now", quality]]);
+    const body = draft.trim();
+    if (supabase && currentUser && activeRoomId && ["Network", "Messages"].includes(sectionName)) {
+      const { data: row, error } = await supabase
+        .from("motion_room_messages")
+        .insert({
+          room_id: activeRoomId,
+          author_id: currentUser.id,
+          author_name: displayNameFor(currentUser),
+          body,
+          exp_awarded: quality.eligible ? quality.exp : 0,
+          quality_label: quality.label,
+          quality_reason: quality.reason,
+        })
+        .select("id, room_id, author_id, author_name, body, exp_awarded, quality_label, quality_reason, created_at, motion_profiles(display_name)")
+        .single();
+      if (error) {
+        toast("Message could not be saved. Check the Supabase chat update.");
+        return;
+      }
+      setMessages([...messages, messageFromRoomRow(row)]);
+    } else {
+      setMessages([...messages, [displayNameFor(currentUser), body, "now", quality]]);
+    }
     setDraft("");
     toast(quality.eligible ? `${sectionName === "Projects" ? "Workspace update posted" : "Message sent"}. ${quality.label}.` : `${sectionName === "Projects" ? "Workspace update posted" : "Message sent"}. No EXP awarded.`);
   };
@@ -2718,7 +2841,7 @@ export default function App() {
         : visibleActive === "Fitness"
           ? <FitnessPage toast={toast}/>
         : ["Network","Messages","Projects"].includes(visibleActive)
-          ? <DeepWorkPage key={visibleActive} name={visibleActive} toast={toast} notificationSettings={notificationSettings} setNotificationSettings={setNotificationSettings}/>
+          ? <DeepWorkPage key={visibleActive} name={visibleActive} toast={toast} notificationSettings={notificationSettings} setNotificationSettings={setNotificationSettings} supabase={supabase} currentUser={currentUser}/>
         : visibleActive === "Library"
           ? <LibraryPage toast={toast}/>
         : visibleActive === "Consistency Hub"
