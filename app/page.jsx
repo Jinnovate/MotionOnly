@@ -1599,32 +1599,111 @@ function OperationsPage({ toast, supabase, currentUser }) {
     focus: ["Business","Trading","Fitness"][index % 3],
   })));
   const [invites, setInvites] = useState([]);
+  const [inviteDraft, setInviteDraft] = useState({ email: "", role: "member", code: "" });
+  const [lastInvite, setLastInvite] = useState(null);
   const canPersistAdmin = Boolean(supabase && currentUser?.id);
+  const makeInviteCode = (email) => {
+    const handle = String(email || "")
+      .split("@")[0]
+      .replace(/[^a-z0-9]/gi, "")
+      .slice(0, 10)
+      .toUpperCase() || "MEMBER";
+    const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+    return `MOTION-${handle}-${suffix}`;
+  };
+  const testerMessageForInvite = (invite) => `You've been invited to test Motion Only.
+
+Go to:
+https://motiononly.netlify.app
+
+Sign up using this exact email:
+${invite.email}
+
+Your invite code is:
+${invite.code}
+
+The app is invite-only, so the email and code need to match exactly.`;
+  const copyInviteMessage = async (invite) => {
+    const message = testerMessageForInvite(invite);
+    try {
+      await navigator.clipboard.writeText(message);
+      toast("Invite message copied.");
+    } catch {
+      toast(message);
+    }
+  };
   useEffect(() => {
     if (!canPersistAdmin) return;
     let cancelled = false;
-    supabase
+    Promise.all([
+      supabase
       .from("motion_profiles")
       .select("id, email, display_name, role, founding_role, founding_status, updated_at")
-      .order("created_at", { ascending: false })
-      .then(({ data, error }) => {
+      .order("created_at", { ascending: false }),
+      supabase
+        .from("motion_invites")
+        .select("id, email, code, role, expires_at, accepted_at")
+        .order("created_at", { ascending: false }),
+    ]).then(([membersResult, invitesResult]) => {
         if (cancelled) return;
-        if (error) {
+        if (membersResult.error) {
           toast("Member roles need admin access in Supabase.");
-          return;
+        } else {
+          setMemberRows((membersResult.data || []).map(row => ({
+            id: row.id,
+            email: row.email,
+            name: row.display_name || row.email,
+            role: row.role || "member",
+            foundingRole: row.founding_role || "none",
+            status: row.founding_status ? "Founding Team" : "Active",
+            focus: foundingLabelFor(row.founding_role) || "Member",
+          })));
         }
-        setMemberRows((data || []).map(row => ({
-          id: row.id,
-          email: row.email,
-          name: row.display_name || row.email,
-          role: row.role || "member",
-          foundingRole: row.founding_role || "none",
-          status: row.founding_status ? "Founding Team" : "Active",
-          focus: foundingLabelFor(row.founding_role) || "Member",
-        })));
+        if (invitesResult.error) {
+          toast("Invite codes need admin access in Supabase.");
+        } else {
+          setInvites((invitesResult.data || []).map(row => ({
+            id: row.id,
+            email: row.email,
+            code: row.code,
+            role: row.role || "member",
+            expiresAt: row.expires_at,
+            acceptedAt: row.accepted_at,
+            status: row.accepted_at ? "Accepted" : "Ready to send",
+          })));
+        }
       });
     return () => { cancelled = true; };
   }, [canPersistAdmin, currentUser?.id, supabase]);
+  const createInvite = async (event) => {
+    event.preventDefault();
+    const email = inviteDraft.email.trim().toLowerCase();
+    const code = (inviteDraft.code.trim() || makeInviteCode(email)).toUpperCase();
+    const role = inviteDraft.role || "member";
+    if (!email.includes("@")) {
+      toast("Add a valid email first.");
+      return;
+    }
+    const nextInvite = { email, code, role, status: "Ready to send", acceptedAt: null };
+    setInvites([nextInvite, ...invites.filter(invite => invite.code !== code)]);
+    setInviteDraft({ email: "", role: "member", code: "" });
+    setLastInvite(nextInvite);
+    if (canPersistAdmin) {
+      const { error } = await supabase.from("motion_invites").upsert({
+        email,
+        code,
+        role,
+        expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString(),
+        accepted_by: null,
+        accepted_at: null,
+      }, { onConflict: "code" });
+      if (error) {
+        toast("Invite code could not be saved. Check admin permissions.");
+        return;
+      }
+    }
+    toast(`Invite code created for ${email}.`);
+  };
   const setMemberRole = async (index, role) => {
     const member = memberRows[index];
     setMemberRows(memberRows.map((row, rowIndex) => rowIndex === index ? { ...row, role } : row));
@@ -1667,14 +1746,23 @@ function OperationsPage({ toast, supabase, currentUser }) {
       </div>) : <div className="empty-state compact"><strong>No members yet</strong><span>Accepted invitations will appear here.</span></div>}
     </div>;
     if (current.key === "invitations") return <div className="admin-table">
-      {invites.length ? invites.map(([email, role, status]) => <div className="admin-row" key={email}>
-        <span><strong>{email}</strong><small>{role} invitation - {status}</small></span>
-        <button onClick={() => toast(`Invite resent to ${email}.`)}>Resend</button>
-        <button onClick={() => toast(`Invite revoked for ${email}.`)}>Revoke</button>
-      </div>) : <div className="empty-state compact"><strong>No pending invites</strong><span>Create an invite when you are ready to bring someone in.</span></div>}
-      <form className="admin-inline" onSubmit={event => { event.preventDefault(); const form = new FormData(event.currentTarget); const email = String(form.get("email") || "").trim(); const role = String(form.get("role") || "Member"); if (!email) return; setInvites([[email, role, "Draft"], ...invites]); event.currentTarget.reset(); toast("Invitation draft created."); }}>
-        <input name="email" placeholder="member@email.com" /><select name="role"><option>Member</option><option>Moderator</option><option>Admin</option></select><button type="submit">Create invite</button>
+      <form className="admin-inline invite-code-form" onSubmit={createInvite}>
+        <input name="email" type="email" value={inviteDraft.email} onChange={event => setInviteDraft({ ...inviteDraft, email: event.target.value })} placeholder="member@email.com" />
+        <select name="role" value={inviteDraft.role} onChange={event => setInviteDraft({ ...inviteDraft, role: event.target.value })}><option value="member">Member</option><option value="moderator">Moderator</option><option value="admin">Admin</option></select>
+        <input name="code" value={inviteDraft.code} onChange={event => setInviteDraft({ ...inviteDraft, code: event.target.value.toUpperCase() })} placeholder="Auto code or custom" />
+        <button type="submit">Create code</button>
       </form>
+      <div className="invite-help"><Lock size={14}/><span>Create the Motion Only code here, then use Supabase “Send invitation” or send the message manually. The email and code must match at signup.</span></div>
+      {lastInvite && <div className="invite-message-box">
+        <strong>Latest invite message</strong>
+        <pre>{testerMessageForInvite(lastInvite)}</pre>
+        <button onClick={() => copyInviteMessage(lastInvite)}><Copy size={14}/> Copy message</button>
+      </div>}
+      {invites.length ? invites.map((invite) => <div className="admin-row invite-admin-row" key={invite.code}>
+        <span><strong>{invite.email}</strong><small>{invite.role} invitation - {invite.status} - {invite.code}</small></span>
+        <button onClick={() => copyInviteMessage(invite)}><Copy size={14}/> Copy</button>
+        <button onClick={() => toast("Use Supabase Auth > Users > Add user > Send invitation to email them.")}>Send email</button>
+      </div>) : <div className="empty-state compact"><strong>No pending invites</strong><span>Create an invite when you are ready to bring someone in.</span></div>}
     </div>;
     if (current.key === "roles") return <div className="role-grid founding-role-grid">
       {foundingTeamRoles.filter(role => role.key !== "none").map(role => <section key={role.key}>
