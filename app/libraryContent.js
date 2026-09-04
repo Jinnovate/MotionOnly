@@ -1902,6 +1902,19 @@ export const libraryContent = [
         ],
       },
       {
+        heading: "Why evidence builds confidence",
+        body: [
+          "The brain trusts repeated proof more than positive self-talk. If a member tells himself he is confident but keeps avoiding the same action, the nervous system learns the opposite: this action is dangerous, delay is safer.",
+          "Evidence changes that pattern. Every clean rep teaches the body and mind that discomfort can be survived. That is why confidence should be built through visible action, not hype.",
+        ],
+        bullets: [
+          "A small completed action reduces uncertainty.",
+          "Repetition makes unfamiliar situations feel less threatening.",
+          "Private proof lowers the need to impress other people.",
+          "Evidence gives members something real to return to after a bad day.",
+        ],
+      },
+      {
         heading: "Use the evidence loop",
         table: {
           headers: ["Stage", "Question", "Example"],
@@ -1973,6 +1986,19 @@ export const libraryContent = [
         ],
       },
       {
+        heading: "Why people respond to specificity",
+        body: [
+          "Generic messages feel cheap because they could have been sent to anyone. Specific messages feel safer because they prove attention. In business and networking, attention is the first signal of respect.",
+          "Specificity also lowers the mental work for the other person. If they can quickly understand who you are, why you are speaking to them and what you want, they are more likely to reply without feeling trapped.",
+        ],
+        bullets: [
+          "Specific messages create trust faster than polished scripts.",
+          "Clear asks reduce social pressure and awkwardness.",
+          "Listening first makes later opportunities feel earned.",
+          "Good networking compounds because useful people remember useful people.",
+        ],
+      },
+      {
         heading: "The three-part opening",
         table: {
           headers: ["Part", "Purpose", "Example"],
@@ -2038,6 +2064,19 @@ export const libraryContent = [
         body: [
           "Under pressure, people tend to over-focus on the threat in front of them: the lost trade, the unanswered message, the missed workout, the awkward reply. That narrow focus can make the next decision worse.",
           "The goal is not to remove emotion. The goal is to stop emotion from becoming the person in charge.",
+        ],
+      },
+      {
+        heading: "Why pressure creates bad decisions",
+        body: [
+          "Pressure makes short-term relief feel more important than long-term standards. That is why someone revenge trades, sends a defensive reply, skips the journal, overspends on a shortcut or abandons a good plan after one uncomfortable result.",
+          "A pressure protocol works because it creates space. The pause gives the rational part of the member enough time to catch up with the emotional reaction.",
+        ],
+        bullets: [
+          "Revenge decisions usually try to remove discomfort, not solve the problem.",
+          "Urgency can disguise fear of missing out or fear of looking behind.",
+          "Embarrassment pushes people to hide evidence instead of learning from it.",
+          "A pause rule protects reputation, capital, relationships and self-respect.",
         ],
       },
       {
@@ -2109,6 +2148,19 @@ export const libraryContent = [
         ],
       },
       {
+        heading: "Why overthinking feels productive",
+        body: [
+          "Overthinking gives the feeling of work without the risk of action. It can feel responsible because the member is analysing, comparing and imagining outcomes. But if no evidence is being created, the loop is often just avoidance in a smarter outfit.",
+          "The fix is not to become reckless. The fix is to separate serious decisions from reversible tests. Most business, learning and networking decisions become clearer once reality gives feedback.",
+        ],
+        bullets: [
+          "Thinking is useful when it changes the next action.",
+          "Reversible decisions should not consume serious-decision energy.",
+          "A small test often answers what planning cannot.",
+          "Decision confidence grows when criteria are written before emotion takes over.",
+        ],
+      },
+      {
         heading: "Use the Motion filter",
         table: {
           headers: ["Filter", "Question", "Why it matters"],
@@ -2177,6 +2229,19 @@ export const libraryContent = [
         body: [
           "A useful identity is not a slogan. It is a pattern. If someone says he is serious but avoids hard conversations, breaks commitments and hides from feedback, the identity has no evidence yet.",
           "Self-respect grows when your behaviour and your standards stop arguing with each other.",
+        ],
+      },
+      {
+        heading: "Why standards beat motivation",
+        body: [
+          "Motivation changes with sleep, stress, money, attention and mood. Standards are more stable because they define what happens even when the mood is not ideal.",
+          "This matters inside Motion Only because members need a way to return after a miss without collapsing into excuses or shame. A standard gives the next move. It does not require a dramatic reset.",
+        ],
+        bullets: [
+          "Standards make behaviour easier to judge honestly.",
+          "Clear repair actions stop one miss becoming a full identity crisis.",
+          "Self-respect grows when promises are kept or renegotiated early.",
+          "The network becomes stronger when members can trust each other's standards.",
         ],
       },
       {
