@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   Activity, AlertTriangle, Archive, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmark,
   CalendarDays, Check, CheckCircle2, Award,
-  Bot, ChevronDown, ChevronRight, Circle, Clock3, Copy, CreditCard, Download, Dumbbell, ExternalLink, Flag, FolderKanban, Gauge, Goal, GraduationCap, Heart,
+  Bot, BrainCircuit, ChevronDown, ChevronRight, Circle, Clock3, Copy, CreditCard, Download, Dumbbell, ExternalLink, Flag, FolderKanban, Gauge, Goal, GraduationCap, Heart,
   LayoutDashboard, Leaf, ListChecks, Lock, LogOut, Menu, MessageCircle, MoreHorizontal,
   Newspaper, Palette, Pause, Pencil, Play, Plus, Search, Settings, ShieldCheck, SlidersHorizontal, Sparkles, Star, Target, Timer, Trash2, TrendingUp, UserRound, Users, Wallet, X, Zap
 } from "lucide-react";
@@ -702,6 +702,7 @@ const libraryCategoryIcons = {
   Business: FolderKanban,
   Trading: TrendingUp,
   Fitness: Heart,
+  Psychology: BrainCircuit,
 };
 
 function LibraryReader({ resource, onBack, onNext, saved, toggleSaved, toast }) {
@@ -1599,7 +1600,7 @@ function OperationsPage({ toast, supabase, currentUser }) {
     focus: ["Business","Trading","Fitness"][index % 3],
   })));
   const [invites, setInvites] = useState([]);
-  const [inviteDraft, setInviteDraft] = useState({ email: "", role: "member", code: "" });
+  const [inviteDraft, setInviteDraft] = useState({ email: "", role: "member", foundingRole: "none", code: "" });
   const [lastInvite, setLastInvite] = useState(null);
   const canPersistAdmin = Boolean(supabase && currentUser?.id);
   const makeInviteCode = (email) => {
@@ -1622,7 +1623,10 @@ ${invite.email}
 Your invite code is:
 ${invite.code}
 
-The app is invite-only, so the email and code need to match exactly.`;
+${invite.foundingRole && invite.foundingRole !== "none" ? `Your Motion Only role is:
+${foundingLabelFor(invite.foundingRole)}
+
+` : ""}The app is invite-only, so the email and code need to match exactly.`;
   const copyInviteMessage = async (invite) => {
     const message = testerMessageForInvite(invite);
     try {
@@ -1642,7 +1646,7 @@ The app is invite-only, so the email and code need to match exactly.`;
       .order("created_at", { ascending: false }),
       supabase
         .from("motion_invites")
-        .select("id, email, code, role, expires_at, accepted_at")
+        .select("id, email, code, role, founding_role, expires_at, accepted_at")
         .order("created_at", { ascending: false }),
     ]).then(([membersResult, invitesResult]) => {
         if (cancelled) return;
@@ -1667,6 +1671,7 @@ The app is invite-only, so the email and code need to match exactly.`;
             email: row.email,
             code: row.code,
             role: row.role || "member",
+            foundingRole: row.founding_role || "none",
             expiresAt: row.expires_at,
             acceptedAt: row.accepted_at,
             status: row.accepted_at ? "Accepted" : "Ready to send",
@@ -1680,19 +1685,21 @@ The app is invite-only, so the email and code need to match exactly.`;
     const email = inviteDraft.email.trim().toLowerCase();
     const code = (inviteDraft.code.trim() || makeInviteCode(email)).toUpperCase();
     const role = inviteDraft.role || "member";
+    const foundingRole = inviteDraft.foundingRole || "none";
     if (!email.includes("@")) {
       toast("Add a valid email first.");
       return;
     }
-    const nextInvite = { email, code, role, status: "Ready to send", acceptedAt: null };
+    const nextInvite = { email, code, role, foundingRole, status: "Ready to send", acceptedAt: null };
     setInvites([nextInvite, ...invites.filter(invite => invite.code !== code)]);
-    setInviteDraft({ email: "", role: "member", code: "" });
+    setInviteDraft({ email: "", role: "member", foundingRole: "none", code: "" });
     setLastInvite(nextInvite);
     if (canPersistAdmin) {
       const { error } = await supabase.from("motion_invites").upsert({
         email,
         code,
         role,
+        founding_role: foundingRole,
         expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString(),
         accepted_by: null,
         accepted_at: null,
@@ -1749,17 +1756,20 @@ The app is invite-only, so the email and code need to match exactly.`;
       <form className="admin-inline invite-code-form" onSubmit={createInvite}>
         <input name="email" type="email" value={inviteDraft.email} onChange={event => setInviteDraft({ ...inviteDraft, email: event.target.value })} placeholder="member@email.com" />
         <select name="role" value={inviteDraft.role} onChange={event => setInviteDraft({ ...inviteDraft, role: event.target.value })}><option value="member">Member</option><option value="moderator">Moderator</option><option value="admin">Admin</option></select>
+        <select name="foundingRole" value={inviteDraft.foundingRole} onChange={event => setInviteDraft({ ...inviteDraft, foundingRole: event.target.value })}>
+          {foundingTeamRoles.map(role => <option key={role.key} value={role.key}>{role.label}</option>)}
+        </select>
         <input name="code" value={inviteDraft.code} onChange={event => setInviteDraft({ ...inviteDraft, code: event.target.value.toUpperCase() })} placeholder="Auto code or custom" />
         <button type="submit">Create code</button>
       </form>
-      <div className="invite-help"><Lock size={14}/><span>Create the Motion Only code here, then use Supabase “Send invitation” or send the message manually. The email and code must match at signup.</span></div>
+      <div className="invite-help"><Lock size={14}/><span>Create the Motion Only code here, choose their access level and optional Founding Team role, then use Supabase “Send invitation” or send the message manually. The email and code must match at signup.</span></div>
       {lastInvite && <div className="invite-message-box">
         <strong>Latest invite message</strong>
         <pre>{testerMessageForInvite(lastInvite)}</pre>
         <button onClick={() => copyInviteMessage(lastInvite)}><Copy size={14}/> Copy message</button>
       </div>}
       {invites.length ? invites.map((invite) => <div className="admin-row invite-admin-row" key={invite.code}>
-        <span><strong>{invite.email}</strong><small>{invite.role} invitation - {invite.status} - {invite.code}</small></span>
+        <span><strong>{invite.email}</strong><small>{invite.role} invitation - {foundingLabelFor(invite.foundingRole) || "No founding role"} - {invite.status} - {invite.code}</small></span>
         <button onClick={() => copyInviteMessage(invite)}><Copy size={14}/> Copy</button>
         <button onClick={() => toast("Use Supabase Auth > Users > Add user > Send invitation to email them.")}>Send email</button>
       </div>) : <div className="empty-state compact"><strong>No pending invites</strong><span>Create an invite when you are ready to bring someone in.</span></div>}
@@ -2787,13 +2797,20 @@ function AuthGate({ apiBase, supabase, onSession }) {
             email: normalEmail,
             password,
             options: {
-              data: { display_name: name.trim(), role: invite.role || "member" },
+              data: { display_name: name.trim(), role: invite.role || "member", founding_role: invite.founding_role || "none" },
               emailRedirectTo: window.location.origin,
             },
           });
           if (signUpError) throw signUpError;
           if (data.user) {
-            await supabase.from("motion_profiles").upsert({ id: data.user.id, email: normalEmail, display_name: name.trim(), role: invite.role || "member" });
+            await supabase.from("motion_profiles").upsert({
+              id: data.user.id,
+              email: normalEmail,
+              display_name: name.trim(),
+              role: invite.role || "member",
+              founding_role: invite.founding_role || "none",
+              founding_status: invite.founding_role && invite.founding_role !== "none",
+            });
             await supabase.rpc("mark_motion_invite_accepted", { invite_code: code });
           }
           if (data.session) onSession({ token: data.session.access_token, user: profileFromSupabaseUser(data.user) });

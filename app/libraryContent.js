@@ -61,7 +61,7 @@ const sources = {
   },
 };
 
-export const libraryCategories = ["All", "Foundations", "Business", "Trading", "Fitness"];
+export const libraryCategories = ["All", "Foundations", "Business", "Trading", "Fitness", "Psychology"];
 
 export const libraryContent = [
   {
@@ -1875,6 +1875,358 @@ export const libraryContent = [
       ],
     },
     sources: [sources.acsmStrength, sources.ukActivity, sources.nhsFatigue],
+  },
+  {
+    id: "confidence-built-through-evidence",
+    title: "Confidence Built Through Evidence",
+    category: "Psychology",
+    type: "Field guide",
+    level: "Start here",
+    minutes: 12,
+    featured: true,
+    summary: "Build real confidence without pretending, overtalking or waiting until you feel ready.",
+    outcome: "A confidence system based on proof, repetition and small public wins.",
+    sections: [
+      {
+        heading: "Confidence is not noise",
+        body: [
+          "In Motion Only, confidence is not acting loud, forcing dominance or pretending fear is gone. Useful confidence is the belief that you can take the next action because you have evidence that you keep moving.",
+          "The member who quietly sends the message, follows up, trains, journals and keeps promises becomes more confident because his own behaviour becomes trustworthy.",
+        ],
+        bullets: [
+          "Confidence grows fastest when promises are small enough to keep.",
+          "A completed action is better evidence than a motivational thought.",
+          "Repeated exposure lowers the emotional cost of doing difficult things.",
+          "Private evidence matters before public recognition.",
+          "You do not need to feel confident to act; acting creates the evidence.",
+        ],
+      },
+      {
+        heading: "Use the evidence loop",
+        table: {
+          headers: ["Stage", "Question", "Example"],
+          rows: [
+            ["Promise", "What will I do?", "Send 10 targeted messages before 11am"],
+            ["Action", "Did I do it?", "10 sent, 2 replies"],
+            ["Reflection", "What did I learn?", "The opener was too broad"],
+            ["Adjustment", "What changes next?", "Make the first line more specific"],
+            ["Proof", "What can I trust now?", "I can start even when it feels awkward"],
+          ],
+        },
+      },
+      {
+        heading: "Confidence without ego",
+        body: [
+          "Ego needs other people to notice. Confidence needs reality to be clearer. If the goal is business, networking or trading discipline, the most useful psychological state is calm proof, not performance theatre.",
+        ],
+        callout: {
+          label: "Motion rule",
+          text: "Do not say you are confident. Build enough evidence that your behaviour proves it.",
+        },
+      },
+      {
+        heading: "Daily confidence reps",
+        steps: [
+          "Choose one uncomfortable but useful action each day.",
+          "Make it measurable and small enough to complete.",
+          "Do it before you start negotiating with yourself.",
+          "Log the result without overdramatising it.",
+          "Repeat until the action becomes normal.",
+        ],
+      },
+    ],
+    checklist: [
+      "One small promise is chosen for today.",
+      "The promise creates real-world evidence.",
+      "The action is logged after completion.",
+      "The lesson is written without self-attack.",
+      "Tomorrow's action is adjusted from evidence.",
+    ],
+    template: {
+      title: "Confidence evidence card",
+      intro: "Use this when a member feels stuck, hesitant or unsure where confidence should come from.",
+      fields: [
+        ["Uncomfortable action", "The useful action I am avoiding."],
+        ["Smallest version", "The version I can complete today."],
+        ["Proof created", "What will be true when it is done."],
+        ["Result", "What happened in reality."],
+        ["Lesson", "What I will repeat or adjust next time."],
+      ],
+    },
+    sources: [sources.implementationIntentions],
+  },
+  {
+    id: "social-confidence-networking",
+    title: "Social Confidence and Networking",
+    category: "Psychology",
+    type: "Network playbook",
+    level: "Beginner",
+    minutes: 13,
+    summary: "Speak to useful people without sounding needy, fake or transactional.",
+    outcome: "A simple way to start, hold and follow up better conversations.",
+    sections: [
+      {
+        heading: "Networking is trust before opportunity",
+        body: [
+          "Good networking is not collecting contacts. It is becoming easier to trust, remember and introduce. The best members create clear value before they ask for anything.",
+          "A strong network conversation feels specific, calm and useful. It does not feel like a pitch hiding inside small talk.",
+        ],
+      },
+      {
+        heading: "The three-part opening",
+        table: {
+          headers: ["Part", "Purpose", "Example"],
+          rows: [
+            ["Context", "Why this person?", "Saw your post about local lead generation"],
+            ["Respect", "Show you paid attention", "The point about speed-to-lead was sharp"],
+            ["Clean ask", "Make the next step easy", "Would you be open to a 10-minute chat next week?"],
+          ],
+        },
+      },
+      {
+        heading: "Be interested before impressive",
+        bullets: [
+          "Ask about their current focus before talking about yours.",
+          "Listen for problems, constraints and priorities.",
+          "Avoid turning every answer into a story about yourself.",
+          "Do not pretend expertise you do not have.",
+          "If you can help, make a specific offer. If you cannot, remember the detail for later.",
+        ],
+      },
+      {
+        heading: "Follow up like a professional",
+        body: [
+          "The follow-up should prove you listened. Mention the specific topic, the next step and the reason it matters. If there is no next step, leave the door open cleanly instead of forcing attention.",
+        ],
+        callout: {
+          label: "Better message",
+          text: "Good speaking creates comfort. Good follow-up creates trust.",
+        },
+      },
+    ],
+    checklist: [
+      "The message is specific to the person.",
+      "There is no pressure, bragging or fake urgency.",
+      "The ask is clear and easy to answer.",
+      "The conversation records one useful detail.",
+      "Follow-up references the actual conversation.",
+    ],
+    template: {
+      title: "Network message builder",
+      intro: "Use before messaging someone you want to build a real relationship with.",
+      fields: [
+        ["Person", "Who I am contacting."],
+        ["Reason", "Why this person makes sense."],
+        ["Specific observation", "What I noticed about their work, content or business."],
+        ["Clean ask", "The simple next step."],
+        ["Follow-up note", "What I will reference later."],
+      ],
+    },
+  },
+  {
+    id: "emotional-control-under-pressure",
+    title: "Emotional Control Under Pressure",
+    category: "Psychology",
+    type: "Protocol",
+    level: "Intermediate",
+    minutes: 14,
+    summary: "Stay useful when money, ego, rejection, fatigue or urgency starts bending your decisions.",
+    outcome: "A pressure protocol for trading, sales, business and difficult conversations.",
+    sections: [
+      {
+        heading: "Pressure narrows attention",
+        body: [
+          "Under pressure, people tend to over-focus on the threat in front of them: the lost trade, the unanswered message, the missed workout, the awkward reply. That narrow focus can make the next decision worse.",
+          "The goal is not to remove emotion. The goal is to stop emotion from becoming the person in charge.",
+        ],
+      },
+      {
+        heading: "Name the pressure state",
+        table: {
+          headers: ["State", "Common thought", "Useful response"],
+          rows: [
+            ["Revenge", "I need to make it back", "Stop and review before any next trade or decision"],
+            ["Embarrassment", "I look stupid now", "Return to the evidence and the next clean action"],
+            ["Urgency", "I have to act now", "Ask what happens if you wait ten minutes"],
+            ["Avoidance", "I'll do it later", "Shrink the action and start immediately"],
+            ["Overconfidence", "This cannot miss", "Check downside, rules and limits first"],
+          ],
+        },
+      },
+      {
+        heading: "Use a pause rule",
+        body: [
+          "A pause rule is a pre-decided gap between a strong emotion and an irreversible action. It can be two minutes before replying, ten minutes before changing a plan, or the rest of the day after a trading rule breach.",
+        ],
+        bullets: [
+          "If anger is present, do not send the message immediately.",
+          "If urgency is present, define what evidence requires action now.",
+          "If a trading rule breaks, stop before making another decision.",
+          "If shame appears, write the facts before writing the story.",
+          "If excitement spikes, check risk before chasing upside.",
+        ],
+      },
+      {
+        heading: "Return to standards",
+        body: [
+          "Standards are useful because they do not require you to be in the right mood. A member under pressure should ask: what is the next action that protects trust, discipline and future optionality?",
+        ],
+      },
+    ],
+    checklist: [
+      "The pressure state is named.",
+      "The next action is delayed if emotion is high.",
+      "Risk, trust or reputation is protected first.",
+      "The facts are separated from the story.",
+      "A clean next action is chosen.",
+    ],
+    template: {
+      title: "Pressure reset",
+      intro: "Use before responding, trading, spending, quitting or making a high-emotion decision.",
+      fields: [
+        ["Pressure state", "Revenge, embarrassment, urgency, avoidance or overconfidence."],
+        ["Facts", "What is actually known."],
+        ["Story", "What my emotion is adding."],
+        ["Pause rule", "How long I wait before acting."],
+        ["Clean move", "The next action that protects standards."],
+      ],
+    },
+  },
+  {
+    id: "decision-making-without-overthinking",
+    title: "Decision-Making Without Overthinking",
+    category: "Psychology",
+    type: "Decision guide",
+    level: "Beginner",
+    minutes: 11,
+    summary: "Make cleaner decisions when you are stuck between too many options, opinions or possible outcomes.",
+    outcome: "A simple decision filter for business, habits, networking and learning.",
+    sections: [
+      {
+        heading: "Overthinking often hides unclear criteria",
+        body: [
+          "When a decision loops for days, the issue is often not intelligence. It is unclear criteria. You cannot choose well if you have not decided what a good choice must protect or produce.",
+        ],
+      },
+      {
+        heading: "Use the Motion filter",
+        table: {
+          headers: ["Filter", "Question", "Why it matters"],
+          rows: [
+            ["Direction", "Does this move me towards the current outcome?", "Stops random opportunities stealing focus"],
+            ["Cost", "What time, money, energy or trust does it use?", "Makes trade-offs visible"],
+            ["Reversibility", "Can I undo or adjust this later?", "Prevents over-planning small decisions"],
+            ["Evidence", "What proof will tell me if it worked?", "Turns guessing into learning"],
+            ["Next move", "What is the smallest useful step?", "Gets the decision into motion"],
+          ],
+        },
+      },
+      {
+        heading: "Match decision size to decision weight",
+        bullets: [
+          "Small reversible decisions should move quickly.",
+          "Large irreversible decisions deserve slower thinking.",
+          "If the downside is small, test instead of debating.",
+          "If the downside affects money, safety, reputation or relationships, write the decision down first.",
+          "If the choice does not support the current season, park it.",
+        ],
+      },
+      {
+        heading: "Use a test when certainty is impossible",
+        body: [
+          "Many business and networking decisions cannot be solved in your head. The answer appears through a controlled test: ten outreach messages, one landing page, one conversation, one week of a new routine.",
+        ],
+        callout: {
+          label: "Operator standard",
+          text: "Do not worship certainty. Build a test that makes reality answer.",
+        },
+      },
+    ],
+    checklist: [
+      "The decision has clear criteria.",
+      "The cost is named.",
+      "The decision is marked reversible or serious.",
+      "A small test is defined where possible.",
+      "The next move is scheduled.",
+    ],
+    template: {
+      title: "Decision card",
+      intro: "Use when a decision is taking more energy than it deserves.",
+      fields: [
+        ["Decision", "What I am choosing."],
+        ["Criteria", "What a good choice must protect or produce."],
+        ["Cost", "Time, money, attention, energy or trust."],
+        ["Risk", "What could go wrong and how serious it is."],
+        ["Test", "Smallest action that creates evidence."],
+        ["Deadline", "When I stop thinking and act."],
+      ],
+    },
+  },
+  {
+    id: "identity-standards-and-self-respect",
+    title: "Identity, Standards and Self-Respect",
+    category: "Psychology",
+    type: "Standards guide",
+    level: "Start here",
+    minutes: 12,
+    summary: "Use identity as a steady standard instead of a fantasy version of yourself.",
+    outcome: "A clear personal standard that supports business, training, trading and relationships.",
+    sections: [
+      {
+        heading: "Identity is proven by repeated behaviour",
+        body: [
+          "A useful identity is not a slogan. It is a pattern. If someone says he is serious but avoids hard conversations, breaks commitments and hides from feedback, the identity has no evidence yet.",
+          "Self-respect grows when your behaviour and your standards stop arguing with each other.",
+        ],
+      },
+      {
+        heading: "Choose standards you can verify",
+        bullets: [
+          "I keep written commitments or renegotiate them early.",
+          "I tell the truth about progress without making excuses.",
+          "I do not use pressure, fake urgency or exaggerated claims to win trust.",
+          "I protect my health because energy is part of execution.",
+          "I do not turn one bad day into a broken identity.",
+        ],
+      },
+      {
+        heading: "Separate standards from perfection",
+        body: [
+          "A standard tells you how to return. Perfection tells you that one miss means you have failed. Motion Only should reward clean returns: logging the miss, repairing the commitment and getting the next move done.",
+        ],
+      },
+      {
+        heading: "Make the standard visible",
+        table: {
+          headers: ["Area", "Standard", "Proof"],
+          rows: [
+            ["Business", "Follow up every warm lead", "CRM or message log updated"],
+            ["Network", "Make useful introductions", "Intro sent with context"],
+            ["Trading", "No rule breach hidden", "Journal includes adherence grade"],
+            ["Fitness", "Train the minimum week when busy", "Sessions logged"],
+            ["Learning", "Apply one lesson before collecting more", "One implemented change"],
+          ],
+        },
+      },
+    ],
+    checklist: [
+      "The standard is written in plain language.",
+      "The behaviour can be verified.",
+      "A missed standard has a repair action.",
+      "The standard supports the current outcome.",
+      "The member knows what to do next after a bad day.",
+    ],
+    template: {
+      title: "Personal standard statement",
+      intro: "Write this as something you can actually live, not something designed to impress people.",
+      fields: [
+        ["Standard", "The behaviour I expect from myself."],
+        ["Proof", "How I know I lived it this week."],
+        ["Risk point", "Where I usually break it."],
+        ["Repair action", "What I do when I miss."],
+        ["Network support", "Who can hold me to it if needed."],
+      ],
+    },
   },
 ];
 
