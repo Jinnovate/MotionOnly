@@ -1426,6 +1426,16 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
       </div>
     </section>
   </div>;
+  const chatScrollStyles = <style>{`
+    .room-board{height:min(650px,calc(100vh - 260px));min-height:510px}
+    .room-feed{min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(203,162,75,.62) rgba(17,19,21,.75)}
+    .room-feed::-webkit-scrollbar,.message-feed.scrollable::-webkit-scrollbar{width:8px}
+    .room-feed::-webkit-scrollbar-track,.message-feed.scrollable::-webkit-scrollbar-track{background:rgba(17,19,21,.75)}
+    .room-feed::-webkit-scrollbar-thumb,.message-feed.scrollable::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(216,168,63,.9),rgba(138,103,35,.85));border-radius:999px}
+    .room-composer{flex:none}
+    .message-feed.scrollable{max-height:min(460px,calc(100vh - 360px));overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(203,162,75,.62) rgba(17,19,21,.75)}
+    @media(max-width:820px){.room-board{height:min(620px,calc(100vh - 220px));min-height:0}.room-feed{max-height:none}.message-feed.scrollable{max-height:420px}}
+  `}</style>;
 
   if (opened) {
     if (sectionName === "Network" || sectionName === "Messages") {
@@ -1433,6 +1443,7 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
       const isSocialRoom = opened.title.toLowerCase().includes("content") || opened.title.toLowerCase().includes("social");
       const roomMessages = messages;
       return <div className="room-space">
+        {chatScrollStyles}
         <button className="reader-back" onClick={() => setOpened(null)}><ArrowLeft size={16}/> Back to {isConversation ? "conversations" : "rooms"}</button>
         <section className="room-shell">
           <header className="room-header">
@@ -1467,6 +1478,7 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
       </div>;
     }
     return <div className="work-page open">
+      {chatScrollStyles}
       <button className="reader-back" onClick={() => setOpened(null)}><ArrowLeft size={16}/> Back to {sectionName.toLowerCase()}</button>
       <section className="work-room">
         <header>
@@ -1492,7 +1504,7 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
             </button>) : <div className="empty-state compact"><strong>No media yet</strong><span>Upload images, links or files when this workspace has real content.</span></div>}</div>
           </section>
         </div>}
-        <div className="message-feed">
+        <div className="message-feed scrollable">
           {messages.length ? messages.map((message, index) => {
             const [author, body, time, quality] = message;
             return <div className="feed-item" key={`${author}-${index}`}>
