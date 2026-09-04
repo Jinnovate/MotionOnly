@@ -2252,6 +2252,92 @@ function RanksPage() {
   </div>;
 }
 
+function expNumber(value = "0 EXP") {
+  return Number(String(value).replace(/[^\d]/g, "")) || 0;
+}
+
+function rankForExp(totalExp = 0) {
+  const current = [...rankLadder].reverse().find(rank => totalExp >= expNumber(rank.exp)) || rankLadder[0];
+  const next = rankLadder.find(rank => expNumber(rank.exp) > totalExp) || null;
+  return { current, next };
+}
+
+function MotionExpHud({ supabase, currentUser }) {
+  const [earnedExp, setEarnedExp] = useState(0);
+
+  useEffect(() => {
+    if (!supabase || !currentUser?.id) {
+      setEarnedExp(0);
+      return;
+    }
+
+    let cancelled = false;
+    Promise.all([
+      supabase.from("motion_goals").select("exp").eq("user_id", currentUser.id),
+      supabase.from("motion_room_messages").select("exp_awarded").eq("author_id", currentUser.id).is("deleted_at", null),
+      supabase.from("motion_today_motions").select("completed_at").eq("user_id", currentUser.id).not("completed_at", "is", null),
+      supabase.from("motion_daily_standards").select("completed_on").eq("user_id", currentUser.id).not("completed_on", "is", null),
+    ]).then(([goalsResult, messagesResult, motionsResult, standardsResult]) => {
+      if (cancelled) return;
+      const goalExp = (goalsResult.data || []).reduce((sum, item) => sum + (item.exp || 0), 0);
+      const messageExp = (messagesResult.data || []).reduce((sum, item) => sum + (item.exp_awarded || 0), 0);
+      const motionExp = (motionsResult.data || []).length * 25;
+      const standardsExp = (standardsResult.data || []).length * 10;
+      setEarnedExp(goalExp + messageExp + motionExp + standardsExp);
+    }).catch(() => {
+      if (!cancelled) setEarnedExp(0);
+    });
+
+    return () => { cancelled = true; };
+  }, [supabase, currentUser?.id]);
+
+  const levelSize = 500;
+  const level = Math.floor(earnedExp / levelSize) + 1;
+  const levelExp = earnedExp % levelSize;
+  const progress = Math.min(100, Math.round((levelExp / levelSize) * 100));
+  const { current: rank, next } = rankForExp(earnedExp);
+  const nextRankExp = next ? Math.max(0, expNumber(next.exp) - earnedExp) : 0;
+
+  return (
+    <section className="motion-exp-hud" aria-label="Motion Only EXP progress">
+      <style>{`
+        .motion-exp-hud{margin:0 4.2%;padding:18px 0 0;display:grid;grid-template-columns:auto minmax(220px,1fr) auto;gap:18px;align-items:end;border-bottom:1px solid rgba(203,162,75,.16)}
+        .motion-level-number{font:italic 800 72px/.78 "Barlow Condensed",sans-serif;color:var(--gold);letter-spacing:-1px;text-shadow:0 0 28px rgba(203,162,75,.28),0 0 4px rgba(203,162,75,.35)}
+        .motion-rank-strip{min-width:0;padding-bottom:15px}
+        .motion-rank-strip p{margin:0 0 7px;color:#757b7d;font-size:8px;font-weight:800;letter-spacing:1.9px;text-transform:uppercase}
+        .motion-rank-strip h2{margin:0;color:var(--ink);font:italic 700 31px/.9 "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.4px}
+        .motion-exp-track{height:10px;background:#111416;border:1px solid rgba(203,162,75,.2);overflow:hidden;box-shadow:inset 0 0 16px rgba(0,0,0,.45);position:relative}
+        .motion-exp-fill{display:block;height:100%;width:var(--hud-progress);background:linear-gradient(90deg,#8a6421 0%,var(--gold) 48%,#f5d27b 100%);box-shadow:0 0 22px rgba(203,162,75,.72),0 0 42px rgba(203,162,75,.25);position:relative}
+        .motion-exp-fill:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.38),transparent);opacity:.45}
+        .motion-exp-meta{display:flex;justify-content:space-between;gap:12px;margin-top:7px;color:#777e80;font-size:8px;text-transform:uppercase;letter-spacing:.7px}
+        .motion-exp-meta strong{color:#d8d1bd}
+        .motion-next-rank{padding:0 0 15px 18px;border-left:1px solid rgba(203,162,75,.18);min-width:170px}
+        .motion-next-rank span{display:block;color:#777e80;font-size:8px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+        .motion-next-rank strong{display:block;color:var(--gold);font:700 25px/.9 "Barlow Condensed",sans-serif;text-transform:uppercase}
+        body[data-theme="light"] .motion-exp-track,body[data-theme="natural"] .motion-exp-track{background:rgba(255,255,255,.36)}
+        body[data-theme="light"] .motion-rank-strip p,body[data-theme="light"] .motion-exp-meta,body[data-theme="light"] .motion-next-rank span,body[data-theme="natural"] .motion-rank-strip p,body[data-theme="natural"] .motion-exp-meta,body[data-theme="natural"] .motion-next-rank span{color:#6f6a5e}
+        @media(max-width:900px){.motion-exp-hud{grid-template-columns:auto 1fr}.motion-next-rank{grid-column:1/-1;border-left:0;border-top:1px solid rgba(203,162,75,.14);padding:10px 0 12px;display:flex;justify-content:space-between;gap:16px}.motion-level-number{font-size:58px}}
+        @media(max-width:760px){.motion-exp-hud{margin:0 16px;padding-top:14px;gap:12px}.motion-level-number{font-size:50px}.motion-rank-strip{padding-bottom:12px}.motion-rank-strip h2{font-size:24px}.motion-exp-meta{flex-direction:column;gap:3px}.motion-next-rank{font-size:10px}}
+      `}</style>
+      <div className="motion-level-number">{level}</div>
+      <div className="motion-rank-strip">
+        <p>Motion level · {rank.rank}</p>
+        <h2>{displayNameFor(currentUser)}</h2>
+        <div className="motion-exp-track" style={{ "--hud-progress": `${progress}%` }}><i className="motion-exp-fill"/></div>
+        <div className="motion-exp-meta">
+          <span><strong>{levelExp}</strong> / {levelSize} EXP to Level {level + 1}</span>
+          <span>{earnedExp.toLocaleString("en-GB")} total EXP</span>
+        </div>
+      </div>
+      <div className="motion-next-rank">
+        <span>{next ? "Next rank" : "Highest rank"}</span>
+        <strong>{next ? next.rank : rank.rank}</strong>
+        <span>{next ? `${nextRankExp.toLocaleString("en-GB")} EXP away` : "Fully unlocked"}</span>
+      </div>
+    </section>
+  );
+}
+
 const marketBriefs = [
   {
     id: 1,
@@ -3091,6 +3177,7 @@ export default function App() {
     <Sidebar active={visibleActive} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} currentUser={currentUser} onLogout={logout} realBeta={realBeta}/>
     <div className="content-shell">
       <MotionTopbar setOpen={setMenuOpen} setActive={setActive} notifications={notifications} setNotifications={setNotifications} theme={theme} setTheme={setTheme} notificationSettings={notificationSettings} currentUser={currentUser} realBeta={realBeta} onLogout={logout}/>
+      <MotionExpHud supabase={supabase} currentUser={currentUser}/>
       <div className="content">{visibleActive === "Today"
         ? <Home habits={habits} toggleHabit={toggleHabit} addHabit={addHabit} deleteHabit={deleteHabit} setActive={setActive} toast={toast} supabase={supabase} currentUser={currentUser}/>
         : visibleActive === "Goals & habits"
