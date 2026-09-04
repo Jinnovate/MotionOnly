@@ -331,7 +331,7 @@ function Sidebar({ active, setActive, open, setOpen, currentUser, onLogout, real
   );
 }
 
-function MotionTopbar({ setOpen, setActive, notifications, setNotifications, theme, setTheme, notificationSettings, currentUser, realBeta, onLogout }) {
+function MotionTopbar({ setOpen, setActive, notifications, setNotifications, theme, setTheme, notificationSettings, currentUser, realBeta, onLogout, supabase }) {
   const [themeOpen, setThemeOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsCleared, setNotificationsCleared] = useState(true);
@@ -363,6 +363,7 @@ function MotionTopbar({ setOpen, setActive, notifications, setNotifications, the
   return (
     <header className="topbar">
       <button className="menu" onClick={() => setOpen(true)}><Menu size={21}/></button>
+      <MotionExpHud supabase={supabase} currentUser={currentUser}/>
       <div className="top-actions">
         <div className="privacy-pill"><Lock size={13}/> {realBeta ? "Invite-only" : "Members only"} · private by default</div>
         <div className="theme-control" ref={themeRef}>
@@ -2313,23 +2314,24 @@ function MotionExpHud({ supabase, currentUser }) {
   return (
     <section className="motion-exp-hud" aria-label="Motion Only EXP progress">
       <style>{`
-        .motion-exp-hud{margin:0 4.2%;padding:18px 0 0;display:grid;grid-template-columns:auto minmax(220px,1fr) auto;gap:18px;align-items:end;border-bottom:1px solid rgba(203,162,75,.16)}
-        .motion-level-number{font:900 68px/.8 "Arial Black","Impact",system-ui,sans-serif;color:#f7f5ec;letter-spacing:-2.5px;text-shadow:0 0 18px rgba(255,255,255,.18),0 0 32px rgba(203,162,75,.18)}
-        .motion-rank-strip{min-width:0;padding-bottom:15px}
+        .topbar{height:104px;align-items:center}
+        .motion-exp-hud{align-self:stretch;flex:1;min-width:0;margin:0 28px 0 0;padding:15px 0 20px;display:grid;grid-template-columns:auto minmax(180px,1fr) auto;gap:14px;align-items:center;position:relative}
+        .motion-level-number{font:300 58px/.82 "Trebuchet MS","Segoe UI",system-ui,sans-serif;color:#f7f5ec;letter-spacing:-3px;text-shadow:0 0 16px rgba(255,255,255,.16),0 0 30px rgba(203,162,75,.16)}
+        .motion-rank-strip{min-width:0;padding-bottom:0}
         .motion-rank-strip p{margin:0 0 7px;color:#757b7d;font-size:8px;font-weight:800;letter-spacing:1.9px;text-transform:uppercase}
-        .motion-rank-strip h2{margin:0;color:var(--ink);font:italic 700 31px/.9 "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.4px}
-        .motion-exp-track{height:10px;background:#111416;border:1px solid rgba(203,162,75,.2);overflow:hidden;box-shadow:inset 0 0 16px rgba(0,0,0,.45);position:relative}
+        .motion-rank-strip h2{margin:0;color:var(--ink);font:700 19px/.9 "Inter",system-ui,sans-serif;text-transform:uppercase;letter-spacing:2px}
+        .motion-exp-track{height:4px;background:#111416;border:0;overflow:visible;box-shadow:inset 0 0 10px rgba(0,0,0,.45);position:absolute;left:0;right:0;bottom:0}
         .motion-exp-fill{display:block;height:100%;width:var(--hud-progress);background:linear-gradient(90deg,#8a6421 0%,var(--gold) 48%,#f5d27b 100%);box-shadow:0 0 22px rgba(203,162,75,.72),0 0 42px rgba(203,162,75,.25);position:relative}
         .motion-exp-fill:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.38),transparent);opacity:.45}
-        .motion-exp-meta{display:flex;justify-content:space-between;gap:12px;margin-top:7px;color:#777e80;font-size:8px;text-transform:uppercase;letter-spacing:.7px}
+        .motion-exp-meta{display:flex;justify-content:space-between;gap:12px;margin-top:7px;color:#777e80;font-size:7px;text-transform:uppercase;letter-spacing:.7px}
         .motion-exp-meta strong{color:#d8d1bd}
-        .motion-next-rank{padding:0 0 15px 18px;border-left:1px solid rgba(203,162,75,.18);min-width:170px}
+        .motion-next-rank{padding:0 0 0 15px;border-left:1px solid rgba(203,162,75,.18);min-width:145px}
         .motion-next-rank span{display:block;color:#777e80;font-size:8px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
-        .motion-next-rank strong{display:block;color:var(--gold);font:700 25px/.9 "Barlow Condensed",sans-serif;text-transform:uppercase}
+        .motion-next-rank strong{display:block;color:var(--gold);font:700 21px/.9 "Barlow Condensed",sans-serif;text-transform:uppercase}
         body[data-theme="light"] .motion-exp-track,body[data-theme="natural"] .motion-exp-track{background:rgba(255,255,255,.36)}
         body[data-theme="light"] .motion-rank-strip p,body[data-theme="light"] .motion-exp-meta,body[data-theme="light"] .motion-next-rank span,body[data-theme="natural"] .motion-rank-strip p,body[data-theme="natural"] .motion-exp-meta,body[data-theme="natural"] .motion-next-rank span{color:#6f6a5e}
-        @media(max-width:900px){.motion-exp-hud{grid-template-columns:auto 1fr}.motion-next-rank{grid-column:1/-1;border-left:0;border-top:1px solid rgba(203,162,75,.14);padding:10px 0 12px;display:flex;justify-content:space-between;gap:16px}.motion-level-number{font-size:58px}}
-        @media(max-width:760px){.motion-exp-hud{margin:0 16px;padding-top:14px;gap:12px}.motion-level-number{font-size:50px}.motion-rank-strip{padding-bottom:12px}.motion-rank-strip h2{font-size:24px}.motion-exp-meta{flex-direction:column;gap:3px}.motion-next-rank{font-size:10px}}
+        @media(max-width:1080px){.motion-next-rank{display:none}.motion-exp-hud{margin-right:16px}}
+        @media(max-width:760px){.topbar{height:82px}.motion-exp-hud{margin:0 8px 0 0;padding:11px 0 16px;gap:9px}.motion-level-number{font-size:42px;letter-spacing:-2px}.motion-rank-strip h2{font-size:14px;letter-spacing:1.2px}.motion-rank-strip p{font-size:6px;margin-bottom:5px}.motion-exp-meta{display:none}}
       `}</style>
       <div className="motion-level-number">{level}</div>
       <div className="motion-rank-strip">
@@ -3188,8 +3190,7 @@ export default function App() {
   return <div className="app-shell">
     <Sidebar active={visibleActive} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} currentUser={currentUser} onLogout={logout} realBeta={realBeta}/>
     <div className="content-shell">
-      <MotionTopbar setOpen={setMenuOpen} setActive={setActive} notifications={notifications} setNotifications={setNotifications} theme={theme} setTheme={setTheme} notificationSettings={notificationSettings} currentUser={currentUser} realBeta={realBeta} onLogout={logout}/>
-      <MotionExpHud supabase={supabase} currentUser={currentUser}/>
+      <MotionTopbar setOpen={setMenuOpen} setActive={setActive} notifications={notifications} setNotifications={setNotifications} theme={theme} setTheme={setTheme} notificationSettings={notificationSettings} currentUser={currentUser} realBeta={realBeta} onLogout={logout} supabase={supabase}/>
       <div className="content">{visibleActive === "Today"
         ? <Home habits={habits} toggleHabit={toggleHabit} addHabit={addHabit} deleteHabit={deleteHabit} setActive={setActive} toast={toast} supabase={supabase} currentUser={currentUser}/>
         : visibleActive === "Goals & habits"
