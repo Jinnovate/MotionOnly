@@ -150,14 +150,14 @@ function spaceFromRoomRow(row) {
 }
 
 function messageFromRoomRow(row) {
-  const name = row.motion_profiles?.display_name || row.author_name || "Motion Only member";
+  const name = row.author_name || "Motion Only member";
   return [
     name,
     row.body,
     row.created_at ? new Date(row.created_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "now",
     { eligible: Boolean(row.exp_awarded), exp: row.exp_awarded || 0, label: row.exp_awarded ? `+${row.exp_awarded} EXP` : "No EXP", reason: row.quality_reason || "" },
     row.id,
-    row.author_founding_role || row.motion_profiles?.founding_role || "",
+    row.author_founding_role || "",
   ];
 }
 
@@ -1263,7 +1263,7 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
     const loadMessages = () => {
       supabase
         .from("motion_room_messages")
-        .select("id, room_id, author_id, author_name, author_founding_role, body, exp_awarded, quality_label, quality_reason, created_at, motion_profiles(display_name, founding_role)")
+        .select("id, room_id, author_id, author_name, author_founding_role, body, exp_awarded, quality_label, quality_reason, created_at")
         .eq("room_id", opened.id)
         .is("deleted_at", null)
         .order("created_at", { ascending: true })
@@ -1373,7 +1373,7 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
           quality_label: quality.label,
           quality_reason: quality.reason,
         })
-        .select("id, room_id, author_id, author_name, author_founding_role, body, exp_awarded, quality_label, quality_reason, created_at, motion_profiles(display_name, founding_role)")
+        .select("id, room_id, author_id, author_name, author_founding_role, body, exp_awarded, quality_label, quality_reason, created_at")
         .single();
       if (error) {
         toast("Message could not be saved. Check the Supabase chat update.");
