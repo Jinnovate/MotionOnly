@@ -2314,7 +2314,7 @@ function MotionExpHud({ supabase, currentUser }) {
     <section className="motion-exp-hud" aria-label="Motion Only EXP progress">
       <style>{`
         .motion-exp-hud{margin:0 4.2%;padding:18px 0 0;display:grid;grid-template-columns:auto minmax(220px,1fr) auto;gap:18px;align-items:end;border-bottom:1px solid rgba(203,162,75,.16)}
-        .motion-level-number{font:italic 800 72px/.78 "Barlow Condensed",sans-serif;color:var(--gold);letter-spacing:-1px;text-shadow:0 0 28px rgba(203,162,75,.28),0 0 4px rgba(203,162,75,.35)}
+        .motion-level-number{font:900 68px/.8 "Arial Black","Impact",system-ui,sans-serif;color:#f7f5ec;letter-spacing:-2.5px;text-shadow:0 0 18px rgba(255,255,255,.18),0 0 32px rgba(203,162,75,.18)}
         .motion-rank-strip{min-width:0;padding-bottom:15px}
         .motion-rank-strip p{margin:0 0 7px;color:#757b7d;font-size:8px;font-weight:800;letter-spacing:1.9px;text-transform:uppercase}
         .motion-rank-strip h2{margin:0;color:var(--ink);font:italic 700 31px/.9 "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.4px}
