@@ -2316,12 +2316,16 @@ function MotionExpHud({ supabase, currentUser }) {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&display=swap');
         .topbar{height:104px;align-items:center}
-        .motion-exp-hud{align-self:stretch;flex:1;min-width:0;margin:0 28px 0 -22px;padding:14px 0 18px;display:grid;grid-template-columns:54px minmax(180px,1fr) auto;gap:12px;align-items:center;position:relative}
-        .motion-level-number{font:600 52px/.86 "Orbitron","Rajdhani","Segoe UI",system-ui,sans-serif;color:#f7f5ec;letter-spacing:-2px;margin-left:0;text-shadow:0 0 14px rgba(255,255,255,.16),0 0 24px rgba(203,162,75,.18);font-variant-numeric:tabular-nums}
+        .motion-exp-hud{align-self:stretch;flex:1;min-width:0;margin:0 28px 0 -22px;padding:14px 0 18px;display:grid;grid-template-columns:68px minmax(180px,1fr) auto;gap:12px;align-items:center;position:relative}
+        .motion-level-unit{height:64px;display:grid;grid-template-columns:1fr;align-content:center;justify-items:center;border-left:1px solid rgba(203,162,75,.5);border-right:1px solid rgba(203,162,75,.22);background:linear-gradient(135deg,rgba(203,162,75,.08),rgba(255,255,255,.025));position:relative;box-shadow:inset 0 0 18px rgba(203,162,75,.05)}
+        .motion-level-unit:before,.motion-level-unit:after{content:"";position:absolute;width:9px;height:1px;background:var(--gold);left:-1px;box-shadow:0 0 10px rgba(203,162,75,.85)}
+        .motion-level-unit:before{top:0}.motion-level-unit:after{bottom:0}
+        .motion-level-tag{margin:0 0 3px;color:var(--gold);font:800 7px/1 "Inter",system-ui,sans-serif;letter-spacing:1.4px;text-transform:uppercase}
+        .motion-level-number{font:600 42px/.82 "Orbitron","Rajdhani","Segoe UI",system-ui,sans-serif;color:#f7f5ec;letter-spacing:-1.5px;margin-left:0;text-shadow:0 0 14px rgba(255,255,255,.16),0 0 24px rgba(203,162,75,.18);font-variant-numeric:tabular-nums}
         .motion-rank-strip{min-width:0;padding-bottom:0}
         .motion-rank-strip p{margin:0 0 7px;color:#757b7d;font-size:8px;font-weight:800;letter-spacing:1.9px;text-transform:uppercase}
         .motion-rank-strip h2{margin:0;color:var(--ink);font:700 19px/.9 "Inter",system-ui,sans-serif;text-transform:uppercase;letter-spacing:2px}
-        .motion-exp-track{height:2px;background:rgba(203,162,75,.1);border:0;overflow:visible;box-shadow:0 0 8px rgba(203,162,75,.1);position:absolute;left:66px;right:170px;bottom:0}
+        .motion-exp-track{height:2px;background:rgba(203,162,75,.1);border:0;overflow:visible;box-shadow:0 0 8px rgba(203,162,75,.1);position:absolute;left:80px;right:170px;bottom:0}
         .motion-exp-fill{display:block;height:100%;width:var(--hud-progress);background:linear-gradient(90deg,#9a7027 0%,var(--gold) 58%,#f6d684 100%);box-shadow:0 0 10px rgba(203,162,75,.95),0 0 22px rgba(203,162,75,.38);position:relative}
         .motion-exp-fill:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.38),transparent);opacity:.45}
         .motion-exp-meta{display:flex;justify-content:space-between;gap:12px;margin-top:7px;color:#777e80;font-size:7px;text-transform:uppercase;letter-spacing:.7px}
@@ -2332,9 +2336,12 @@ function MotionExpHud({ supabase, currentUser }) {
         body[data-theme="light"] .motion-exp-track,body[data-theme="natural"] .motion-exp-track{background:rgba(255,255,255,.36)}
         body[data-theme="light"] .motion-rank-strip p,body[data-theme="light"] .motion-exp-meta,body[data-theme="light"] .motion-next-rank span,body[data-theme="natural"] .motion-rank-strip p,body[data-theme="natural"] .motion-exp-meta,body[data-theme="natural"] .motion-next-rank span{color:#6f6a5e}
         @media(max-width:1080px){.motion-next-rank{display:none}.motion-exp-hud{margin-right:16px}.motion-exp-track{right:0}}
-        @media(max-width:760px){.topbar{height:82px}.motion-exp-hud{margin:0 8px 0 0;padding:11px 0 16px;grid-template-columns:40px minmax(0,1fr);gap:9px}.motion-level-number{font-size:38px;letter-spacing:-1.5px}.motion-rank-strip h2{font-size:14px;letter-spacing:1.2px}.motion-rank-strip p{font-size:6px;margin-bottom:5px}.motion-exp-meta{display:none}.motion-exp-track{left:50px;right:0}}
+        @media(max-width:760px){.topbar{height:82px}.motion-exp-hud{margin:0 8px 0 0;padding:11px 0 16px;grid-template-columns:46px minmax(0,1fr);gap:9px}.motion-level-unit{height:50px}.motion-level-tag{font-size:5px;margin-bottom:2px}.motion-level-number{font-size:30px;letter-spacing:-1px}.motion-rank-strip h2{font-size:14px;letter-spacing:1.2px}.motion-rank-strip p{font-size:6px;margin-bottom:5px}.motion-exp-meta{display:none}.motion-exp-track{left:56px;right:0}}
       `}</style>
-      <div className="motion-level-number">{level}</div>
+      <div className="motion-level-unit">
+        <span className="motion-level-tag">LVL</span>
+        <div className="motion-level-number">{level}</div>
+      </div>
       <div className="motion-rank-strip">
         <p>Motion level · {rank.rank}</p>
         <h2>{displayNameFor(currentUser)}</h2>
