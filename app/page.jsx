@@ -6,7 +6,7 @@ import {
   Activity, AlertTriangle, Archive, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmark,
   CalendarDays, Check, CheckCircle2, Award,
   Bot, BrainCircuit, ChevronDown, ChevronRight, Circle, Clock3, Copy, CreditCard, Download, Dumbbell, ExternalLink, Flag, FolderKanban, Gauge, Goal, GraduationCap, Heart,
-  LayoutDashboard, Leaf, ListChecks, Lock, LogOut, Menu, MessageCircle, MoreHorizontal,
+  LayoutDashboard, Leaf, ListChecks, Lock, LogOut, Megaphone, Menu, MessageCircle, MoreHorizontal,
   Newspaper, Palette, Pause, Pencil, Play, Plus, Search, Settings, ShieldCheck, SlidersHorizontal, Sparkles, Star, Target, Timer, Trash2, TrendingUp, UserRound, Users, Wallet, X, Zap
 } from "lucide-react";
 import { libraryCategories, libraryContent, libraryStats } from "./libraryContent";
@@ -80,7 +80,7 @@ function featureEnabled(key) {
 
 const nav = [
   ["Today", LayoutDashboard], ["Goals & habits", Target], ["Network", Users],
-  ["Messages", MessageCircle], ["Projects", FolderKanban], ["Schedule", CalendarDays],
+  ["Messages", MessageCircle], ["Projects", FolderKanban], ["Marketing", Megaphone], ["Schedule", CalendarDays],
   ["Library", BookOpen], ["Market News", Newspaper],
 ];
 
@@ -2429,6 +2429,127 @@ const marketWatchAreas = [
   ["Commodities", "Gold / oil", "Useful for inflation and risk sentiment"],
 ];
 
+const marketingMissions = [
+  { title: "Useful comment", channel: "Instagram / TikTok", reward: 5, proof: "Paste the post link and your comment.", note: "Only counts if the comment adds context, asks a proper question, or helps the post move." },
+  { title: "Story share", channel: "Instagram", reward: 10, proof: "Upload/paste a screenshot or story link if available.", note: "Share Motion Only or related useful content without spammy income claims." },
+  { title: "Post share", channel: "Any social", reward: 15, proof: "Paste your post link.", note: "Counts when the share has your own useful caption or lesson attached." },
+  { title: "Content lead", channel: "Network", reward: 20, proof: "Log the person, platform and next step.", note: "For real conversations started from content, not random likes." },
+];
+
+function MarketingPage({ toast }) {
+  const [proof, setProof] = useState({ mission: "Useful comment", link: "", note: "" });
+  const [proofLog, setProofLog] = useState([]);
+  const selectedMission = marketingMissions.find(item => item.title === proof.mission) || marketingMissions[0];
+  const submitProof = (event) => {
+    event.preventDefault();
+    if (!proof.link.trim() && !proof.note.trim()) {
+      toast("Add a link, screenshot note, or proof before submitting.");
+      return;
+    }
+    setProofLog([{ ...proof, reward: selectedMission.reward, status: "Pending review", time: "Just now" }, ...proofLog]);
+    setProof({ mission: selectedMission.title, link: "", note: "" });
+    toast("Marketing proof submitted for review.");
+  };
+
+  return <div className="marketing-page">
+    <style>{`
+      .marketing-page{max-width:1180px;margin:0 auto}
+      .marketing-hero{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:stretch;margin-bottom:16px}
+      .marketing-hero-main,.marketing-score,.marketing-card,.marketing-proof,.marketing-log,.marketing-reality{background:#141618;border:1px solid var(--line);border-top:2px solid var(--gold);padding:22px}
+      .marketing-hero h1{font:italic 700 54px/.9 "Barlow Condensed",sans-serif;text-transform:uppercase;color:var(--ink);margin:0 0 11px}
+      .marketing-hero p:not(.eyebrow),.marketing-card p,.marketing-proof p,.marketing-reality p{color:#929799;font-size:10px;line-height:1.65;margin:0}
+      .marketing-score{display:grid;align-content:center}
+      .marketing-score span{color:#8e7742;text-transform:uppercase;letter-spacing:.8px;font-size:8px}
+      .marketing-score strong{display:block;color:var(--gold);font:700 46px/.9 "Barlow Condensed",sans-serif;margin:8px 0}
+      .marketing-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+      .marketing-card{padding:16px;border-top:0}
+      .marketing-card header{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:12px}
+      .marketing-card h2{font:600 24px/1 "Barlow Condensed",sans-serif;text-transform:uppercase;color:var(--ink);margin:0}
+      .marketing-card b{color:var(--gold);font:700 22px/1 "Barlow Condensed",sans-serif;white-space:nowrap}
+      .marketing-card small{display:block;color:#8e7742;text-transform:uppercase;letter-spacing:.7px;font-size:7px;margin-bottom:8px}
+      .marketing-card em{display:block;color:#b8b0a0;font-style:normal;font-size:9px;line-height:1.45;margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+      .marketing-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+      .marketing-proof form{display:grid;gap:10px;margin-top:15px}
+      .marketing-proof label{display:grid;gap:6px;color:#8e7742;text-transform:uppercase;letter-spacing:.7px;font-size:8px}
+      .marketing-proof input,.marketing-proof select,.marketing-proof textarea{background:#0e1012;border:1px solid #35383a;color:#eeeae0;outline:none;padding:12px}
+      .marketing-proof textarea{min-height:90px;resize:vertical}
+      .marketing-proof input:focus,.marketing-proof select:focus,.marketing-proof textarea:focus{border-color:var(--gold)}
+      .marketing-proof button{justify-content:center}
+      .marketing-log{margin-top:14px}
+      .marketing-log h2,.marketing-reality h2{font:600 26px/1 "Barlow Condensed",sans-serif;text-transform:uppercase;color:var(--ink);margin:0 0 14px}
+      .marketing-entry{display:grid;grid-template-columns:1fr auto;gap:12px;border-top:1px solid var(--line);padding:12px 0}
+      .marketing-entry strong{display:block;color:#eeeae0;text-transform:uppercase;font-size:10px}
+      .marketing-entry span,.marketing-entry small{display:block;color:#7d8385;font-size:8px;margin-top:5px}
+      .marketing-entry b{color:var(--gold);font:700 20px/1 "Barlow Condensed",sans-serif}
+      .social-connect{display:grid;gap:8px;margin-bottom:14px}
+      .social-connect button,.marketing-reality span{border:1px solid #303336;background:#101214;color:#c9c5ba;padding:11px;display:flex;justify-content:space-between;gap:10px;align-items:center;text-align:left;text-transform:uppercase;letter-spacing:.55px;font-size:8px}
+      .social-connect button i{font-style:normal;color:#777d7f}
+      .marketing-reality{border-top-color:#3a3d40}
+      .marketing-reality span{align-items:flex-start;line-height:1.45;margin-top:8px;text-transform:none;letter-spacing:0;font-size:9px}
+      .marketing-reality span b{color:var(--gold);text-transform:uppercase;letter-spacing:.65px;font-size:8px;min-width:76px}
+      @media(max-width:980px){.marketing-hero,.marketing-layout{grid-template-columns:1fr}.marketing-grid{grid-template-columns:repeat(2,1fr)}}
+      @media(max-width:560px){.marketing-grid{grid-template-columns:1fr}.marketing-hero h1{font-size:39px}.marketing-hero-main,.marketing-score,.marketing-card,.marketing-proof,.marketing-log,.marketing-reality{padding:16px}}
+    `}</style>
+    <section className="marketing-hero">
+      <div className="marketing-hero-main">
+        <p className="eyebrow">MARKETING</p>
+        <h1>Growth that can be proven.</h1>
+        <p>Earn extra EXP for useful Motion Only promotion: meaningful comments, clean shares, useful content support and real conversations started from social activity.</p>
+      </div>
+      <aside className="marketing-score">
+        <span>This week</span>
+        <strong>{proofLog.reduce((sum, item) => sum + item.reward, 0)} EXP</strong>
+        <p>Submitted proof sits pending until reviewed. That keeps EXP clean and stops spam farming.</p>
+      </aside>
+    </section>
+
+    <div className="marketing-grid">
+      {marketingMissions.map(mission => <article className="marketing-card" key={mission.title}>
+        <header><div><small>{mission.channel}</small><h2>{mission.title}</h2></div><b>+{mission.reward}</b></header>
+        <p>{mission.note}</p>
+        <em>{mission.proof}</em>
+      </article>)}
+    </div>
+
+    <div className="marketing-layout">
+      <main>
+        <section className="marketing-proof">
+          <p className="eyebrow">SUBMIT PROOF</p>
+          <h2>Log a marketing action</h2>
+          <p>For now this uses proof submission and review. Later, connected socials can auto-detect some actions where the platform allows it.</p>
+          <form onSubmit={submitProof}>
+            <label>Action<select value={proof.mission} onChange={event => setProof({...proof, mission:event.target.value})}>{marketingMissions.map(mission => <option key={mission.title}>{mission.title}</option>)}</select></label>
+            <label>Link or proof reference<input value={proof.link} onChange={event => setProof({...proof, link:event.target.value})} placeholder="Paste IG/TikTok/post link or screenshot reference" /></label>
+            <label>Context<textarea value={proof.note} onChange={event => setProof({...proof, note:event.target.value})} placeholder="What did you do, and why was it useful?" /></label>
+            <button className="primary" type="submit"><Megaphone size={15}/> Submit for review</button>
+          </form>
+        </section>
+        <section className="marketing-log">
+          <h2>Submitted actions</h2>
+          {proofLog.length ? proofLog.map((item, index) => <div className="marketing-entry" key={`${item.mission}-${index}`}>
+            <div><strong>{item.mission}</strong><span>{item.link || item.note}</span><small>{item.status} · {item.time}</small></div><b>+{item.reward} EXP</b>
+          </div>) : <div className="empty-state compact"><strong>No marketing actions yet</strong><span>Submit useful proof when you comment, share or create a real conversation.</span></div>}
+        </section>
+      </main>
+      <aside>
+        <section className="marketing-reality">
+          <h2>Social connection plan</h2>
+          <div className="social-connect">
+            <button onClick={() => toast("Instagram connection is a later API step.")}>Connect Instagram <i>Later</i></button>
+            <button onClick={() => toast("TikTok connection is a later API step.")}>Connect TikTok <i>Later</i></button>
+            <button onClick={() => toast("Motion Only accounts can be connected once API access is approved.")}>Connect Motion Only socials <i>Admin</i></button>
+          </div>
+          <p>Realistic setup:</p>
+          <span><b>Now</b> Members submit proof. Admin approves EXP.</span>
+          <span><b>Later</b> Instagram/TikTok login can connect identities and read some profile or public video data with permission.</span>
+          <span><b>Limited</b> Shares, story views and every comment cannot always be detected automatically. Platform APIs restrict this heavily.</span>
+          <span><b>Best</b> Auto-verify what platforms expose, manually review the rest.</span>
+        </section>
+      </aside>
+    </div>
+  </div>;
+}
+
 function MarketNewsPage({ toast }) {
   const [filter, setFilter] = useState("All");
   const [articles, setArticles] = useState(marketBriefs);
@@ -3242,6 +3363,8 @@ export default function App() {
           ? <LibraryPage toast={toast}/>
         : visibleActive === "Consistency Hub"
           ? <ConsistencyHubPage toast={toast} setActive={setActive}/>
+        : visibleActive === "Marketing"
+          ? <MarketingPage toast={toast}/>
         : visibleActive === "Market News"
           ? <MarketNewsPage toast={toast}/>
         : visibleActive === "Ranks"
