@@ -88,6 +88,21 @@ const goals = [];
 
 const baseHabits = [];
 
+const expRules = {
+  completedMotion: 25,
+  dailyStandard: 10,
+  goalEvidence: 25,
+  usefulChat: 5,
+  usefulProjectUpdate: 10,
+  levelSize: 500,
+};
+
+function refreshMotionExp() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event("motion-exp-refresh"));
+  window.setTimeout(() => window.dispatchEvent(new Event("motion-exp-refresh")), 700);
+}
+
 const motionCategories = ["Business", "Networking", "Lifestyle", "Learning", "Trading"];
 
 const motionHelpExamples = [
@@ -427,8 +442,8 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast, su
   const motionHelpRef = useRef(null);
   const completed = standardRows.filter(h => h.done).length;
   const completedMotions = motions.filter(m => m.done).length;
-  const baseExp = completedMotions * 25 + completed * 10;
-  const levelSize = 250;
+  const baseExp = completedMotions * expRules.completedMotion + completed * expRules.dailyStandard;
+  const levelSize = expRules.levelSize;
   const currentLevel = Math.floor(baseExp / levelSize) + 1;
   const levelExp = baseExp % levelSize;
   const canPersist = Boolean(supabase && currentUser?.id);
@@ -526,7 +541,8 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast, su
         if (error) toast("Motion updated locally. Supabase update failed.");
       });
     }
-    toast("Today's motion updated.");
+    refreshMotionExp();
+    toast(nextDone ? `Today's motion complete. +${expRules.completedMotion} EXP.` : "Today's motion reopened. EXP removed until complete.");
   };
   const toggleStandard = (id) => {
     const target = standardRows.find(standard => standard.id === id);
@@ -537,7 +553,8 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast, su
         if (error) toast("Standard updated locally. Supabase update failed.");
       });
     } else toggleHabit(id);
-    toast("Standard updated privately.");
+    refreshMotionExp();
+    toast(nextDone ? `Standard checked. +${expRules.dailyStandard} EXP.` : "Standard unchecked. EXP removed until checked.");
   };
   const deleteStandard = (id) => {
     setStandardRows(standardRows.filter(standard => standard.id !== id));
@@ -547,6 +564,7 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast, su
       });
     } else deleteHabit(id);
     toast("Daily standard deleted.");
+    refreshMotionExp();
   };
   const deleteMotion = (motion) => {
     setMotions(motions.filter(item => item.id !== motion.id));
@@ -557,6 +575,7 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast, su
       });
     }
     toast("Move removed.");
+    refreshMotionExp();
   };
   useEffect(() => {
     if (!motionHelpOpen) return;
@@ -581,12 +600,12 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast, su
       <section className="motion-rules card">
         <div><p className="eyebrow">HOW PROGRESS IS SCORED</p><h2>No guessed percentages. Only evidence.</h2><p>Complete clear actions to earn EXP. No separate points system, no confusing progress percentages.</p></div>
         <div className="rule-grid">
-          <span><strong>+25 EXP</strong>Completed daily move</span>
-          <span><strong>+10 EXP</strong>Daily standard checked</span>
-          <span><strong>+5 EXP</strong>Qualified network contribution</span>
-          <span><strong>+10 EXP</strong>Useful project update</span>
+          <span><strong>+{expRules.completedMotion} EXP</strong>Completed daily move</span>
+          <span><strong>+{expRules.dailyStandard} EXP</strong>Daily standard checked</span>
+          <span><strong>+{expRules.goalEvidence} EXP</strong>Goal evidence logged</span>
+          <span><strong>+{expRules.usefulChat} EXP</strong>Qualified network contribution</span>
+          <span><strong>+{expRules.usefulProjectUpdate} EXP</strong>Useful project update</span>
           <span><strong>EXP</strong>One simple progress currency</span>
-          <span><strong>Evidence</strong>Progress must be logged or completed</span>
         </div>
       </section>
       <FoundingTeamPanel currentUser={currentUser}/>
@@ -1177,8 +1196,8 @@ function evaluateContribution(text = "", sectionName = "Network", existingMessag
   if (repeated) return { eligible: false, exp: 0, label: "No EXP", reason: "Repeated or copied messages do not earn EXP." };
 
   const signal = hasMeaningfulSignal(trimmed, sectionName);
-  if (sectionName === "Projects" && signal) return { eligible: true, exp: 10, label: "+10 EXP eligible", reason: "Project update has useful context or a next step." };
-  if (signal) return { eligible: true, exp: 5, label: "+5 EXP eligible", reason: "Contribution appears useful enough to earn chat EXP." };
+  if (sectionName === "Projects" && signal) return { eligible: true, exp: expRules.usefulProjectUpdate, label: `+${expRules.usefulProjectUpdate} EXP eligible`, reason: "Project update has useful context or a next step." };
+  if (signal) return { eligible: true, exp: expRules.usefulChat, label: `+${expRules.usefulChat} EXP eligible`, reason: "Contribution appears useful enough to earn chat EXP." };
   return { eligible: false, exp: 0, label: "Needs signal", reason: "Long enough, but add a question, result, lesson, blocker, decision, or next step." };
 }
 
@@ -1385,6 +1404,7 @@ function DeepWorkPage({ name, toast, notificationSettings, setNotificationSettin
       setMessages([...messages, [displayNameFor(currentUser), body, "now", quality]]);
     }
     setDraft("");
+    if (quality.eligible) refreshMotionExp();
     toast(quality.eligible ? `${sectionName === "Projects" ? "Workspace update posted" : "Message sent"}. ${quality.label}.` : `${sectionName === "Projects" ? "Workspace update posted" : "Message sent"}. No EXP awarded.`);
   };
   const uploadWorkspaceMedia = (event) => {
@@ -1848,7 +1868,7 @@ function SimpleGoalsHabitsPage({ toast, supabase, currentUser }) {
   const completed = standardRows.filter(standard => standard.done).length;
   const goalEvidence = goalRows.reduce((sum, goal) => sum + (goal.evidence || 0), 0);
   const goalExp = goalRows.reduce((sum, goal) => sum + (goal.exp || 0), 0);
-  const standardsExp = completed * 10;
+  const standardsExp = completed * expRules.dailyStandard;
   useEffect(() => {
     if (!canPersist) return;
     let cancelled = false;
@@ -1874,19 +1894,21 @@ function SimpleGoalsHabitsPage({ toast, supabase, currentUser }) {
         if (error) toast("Standard updated locally. Supabase update failed.");
       });
     }
-    toast("Standard updated privately.");
+    refreshMotionExp();
+    toast(nextDone ? `Standard checked. +${expRules.dailyStandard} EXP.` : "Standard unchecked. EXP removed until checked.");
   };
   const logGoal = (index) => {
     const target = goalRows[index];
     const nextEvidence = (target?.evidence || 0) + 1;
-    const nextExp = (target?.exp || 0) + 25;
+    const nextExp = (target?.exp || 0) + expRules.goalEvidence;
     setGoalRows(goalRows.map((goal, goalIndex) => goalIndex === index ? { ...goal, evidence: nextEvidence, exp: nextExp } : goal));
     if (canPersist && target?.id) {
       supabase.from("motion_goals").update({ evidence_count: nextEvidence, exp: nextExp, updated_at: new Date().toISOString() }).eq("id", target.id).eq("user_id", currentUser.id).then(({ error }) => {
         if (error) toast("Evidence logged locally. Supabase update failed.");
       });
     }
-    toast("Evidence logged. +25 EXP.");
+    refreshMotionExp();
+    toast(`Evidence logged. +${expRules.goalEvidence} EXP.`);
   };
   const saveItem = (event) => {
     event.preventDefault();
@@ -2285,26 +2307,33 @@ function MotionExpHud({ supabase, currentUser }) {
     }
 
     let cancelled = false;
-    Promise.all([
-      supabase.from("motion_goals").select("exp").eq("user_id", currentUser.id),
-      supabase.from("motion_room_messages").select("exp_awarded").eq("author_id", currentUser.id).is("deleted_at", null),
-      supabase.from("motion_today_motions").select("completed_at").eq("user_id", currentUser.id).not("completed_at", "is", null),
-      supabase.from("motion_daily_standards").select("completed_on").eq("user_id", currentUser.id).not("completed_on", "is", null),
-    ]).then(([goalsResult, messagesResult, motionsResult, standardsResult]) => {
-      if (cancelled) return;
-      const goalExp = (goalsResult.data || []).reduce((sum, item) => sum + (item.exp || 0), 0);
-      const messageExp = (messagesResult.data || []).reduce((sum, item) => sum + (item.exp_awarded || 0), 0);
-      const motionExp = (motionsResult.data || []).length * 25;
-      const standardsExp = (standardsResult.data || []).length * 10;
-      setEarnedExp(goalExp + messageExp + motionExp + standardsExp);
-    }).catch(() => {
-      if (!cancelled) setEarnedExp(0);
-    });
+    const loadExp = () => {
+      Promise.all([
+        supabase.from("motion_goals").select("exp").eq("user_id", currentUser.id),
+        supabase.from("motion_room_messages").select("exp_awarded").eq("author_id", currentUser.id).is("deleted_at", null),
+        supabase.from("motion_today_motions").select("completed_at").eq("user_id", currentUser.id).not("completed_at", "is", null),
+        supabase.from("motion_daily_standards").select("completed_on").eq("user_id", currentUser.id).not("completed_on", "is", null),
+      ]).then(([goalsResult, messagesResult, motionsResult, standardsResult]) => {
+        if (cancelled) return;
+        const goalExp = (goalsResult.data || []).reduce((sum, item) => sum + (item.exp || 0), 0);
+        const messageExp = (messagesResult.data || []).reduce((sum, item) => sum + (item.exp_awarded || 0), 0);
+        const motionExp = (motionsResult.data || []).length * expRules.completedMotion;
+        const standardsExp = (standardsResult.data || []).length * expRules.dailyStandard;
+        setEarnedExp(goalExp + messageExp + motionExp + standardsExp);
+      }).catch(() => {
+        if (!cancelled) setEarnedExp(0);
+      });
+    };
+    loadExp();
+    window.addEventListener("motion-exp-refresh", loadExp);
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      window.removeEventListener("motion-exp-refresh", loadExp);
+    };
   }, [supabase, currentUser?.id]);
 
-  const levelSize = 500;
+  const levelSize = expRules.levelSize;
   const level = Math.floor(earnedExp / levelSize) + 1;
   const levelExp = earnedExp % levelSize;
   const progress = Math.min(100, Math.round((levelExp / levelSize) * 100));
