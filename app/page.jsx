@@ -12,12 +12,12 @@ import {
 import { libraryCategories, libraryContent, libraryStats } from "./libraryContent";
 
 const featureFlags = {
-  consistencyHub: false,
+  consistencyHub: true,
   fitness: false,
   ranks: false,
-  consistencySignals: false,
-  consistencyCopyTrading: false,
-  consistencyPartnerHub: false,
+  consistencySignals: true,
+  consistencyCopyTrading: true,
+  consistencyPartnerHub: true,
 };
 
 const pageFeatureMap = {
@@ -81,7 +81,7 @@ function featureEnabled(key) {
 const nav = [
   ["Today", LayoutDashboard], ["Goals & habits", Target], ["Network", Users],
   ["Messages", MessageCircle], ["Projects", FolderKanban], ["Marketing", Megaphone], ["Schedule", CalendarDays],
-  ["Library", BookOpen], ["Market News", Newspaper],
+  ["Library", BookOpen], ["Consistency Hub", TrendingUp], ["Market News", Newspaper],
 ];
 
 const goals = [];
