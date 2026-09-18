@@ -380,7 +380,6 @@ function MotionTopbar({ setOpen, setActive, notifications, setNotifications, the
       <button className="menu" onClick={() => setOpen(true)}><Menu size={21}/></button>
       <MotionExpHud supabase={supabase} currentUser={currentUser}/>
       <div className="top-actions">
-        <div className="privacy-pill"><Lock size={13}/> {realBeta ? "Invite-only" : "Members only"} · private by default</div>
         <div className="theme-control" ref={themeRef}>
           <button className="icon-button theme-button" onClick={(event) => { event.stopPropagation(); setThemeOpen(!themeOpen); }} aria-label="Colour scheme"><Palette size={18}/><span>{activeTheme}</span></button>
           {themeOpen && <div className="theme-menu">
@@ -597,17 +596,6 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast, su
       <section className="welcome">
         <div><p className="eyebrow">{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }).toUpperCase()} · TODAY'S MOTION</p><h1>Progress is earned.</h1><p>Move with intent. Build with others. Keep the promise.</p></div>
       </section>
-      <section className="motion-rules card">
-        <div><p className="eyebrow">HOW PROGRESS IS SCORED</p><h2>No guessed percentages. Only evidence.</h2><p>Complete clear actions to earn EXP. No separate points system, no confusing progress percentages.</p></div>
-        <div className="rule-grid">
-          <span><strong>+{expRules.completedMotion} EXP</strong>Completed daily move</span>
-          <span><strong>+{expRules.dailyStandard} EXP</strong>Daily standard checked</span>
-          <span><strong>+{expRules.goalEvidence} EXP</strong>Goal evidence logged</span>
-          <span><strong>+{expRules.usefulChat} EXP</strong>Qualified network contribution</span>
-          <span><strong>+{expRules.usefulProjectUpdate} EXP</strong>Useful project update</span>
-          <span><strong>EXP</strong>One simple progress currency</span>
-        </div>
-      </section>
       <FoundingTeamPanel currentUser={currentUser}/>
       <form className="today-panel motion-entry" onSubmit={saveNewMove}>
         <div>
@@ -703,13 +691,6 @@ function Home({ habits, toggleHabit, addHabit, deleteHabit, setActive, toast, su
               ]}/>
             </div>) : <div className="empty-state compact"><strong>No daily standards yet</strong><span>Add only the repeatable actions you actually want to track.</span></div>}
             <button className="add-habit" onClick={() => startPanel("habit")}><Plus size={15}/> Add a discipline</button>
-          </section>
-          <section className="card pulse">
-            <p className="eyebrow">EXP PROGRESS</p><div className="pulse-top"><div className="ring" style={{background:`conic-gradient(var(--gold) 0 ${Math.round((levelExp / levelSize) * 100)}%,#303639 ${Math.round((levelExp / levelSize) * 100)}%)`}}><span>{levelExp}<small>/{levelSize}</small></span></div><div><h3>Level {currentLevel}</h3><p>{levelSize - levelExp} EXP to next level</p></div></div>
-            <div className="stat-row"><span>Level<strong>{currentLevel} <small>Current rank</small></strong></span><span>EXP<strong>{levelExp} <small>/ {levelSize}</small></strong></span></div>
-            {featureEnabled("ranks")
-              ? <button className="soft-btn" onClick={() => setActive("Ranks")}>View rank unlocks <ChevronRight size={15}/></button>
-              : <button className="soft-btn" onClick={() => setActive("Goals & habits")}>Review progress <ChevronRight size={15}/></button>}
           </section>
         </aside>
       </div>
