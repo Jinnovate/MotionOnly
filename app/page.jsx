@@ -21,7 +21,7 @@ const featureFlags = {
 };
 
 const pageFeatureMap = {
-  "Consistency Hub": "consistencyHub",
+  "The Consistency Hub": "consistencyHub",
   Fitness: "fitness",
   Ranks: "ranks",
 };
@@ -81,7 +81,7 @@ function featureEnabled(key) {
 const nav = [
   ["Today", LayoutDashboard], ["Goals & habits", Target], ["Network", Users],
   ["Messages", MessageCircle], ["Projects", FolderKanban], ["Marketing", Megaphone], ["Schedule", CalendarDays],
-  ["Library", BookOpen], ["Consistency Hub", TrendingUp], ["Market News", Newspaper],
+  ["Library", BookOpen], ["The Consistency Hub", TrendingUp], ["Market News", Newspaper],
 ];
 
 const goals = [];
@@ -265,7 +265,7 @@ const pages = {
   Fitness: { eyebrow: "PHYSICAL STANDARD", title: "Fitness missions", text: "Set measurable targets, log attempts, prove progress and complete missions without guessing percentages." },
   Schedule: { eyebrow: "THE WEEK AHEAD", title: "Schedule", text: "Personal reminders, group calls and targeted accountability without the noise." },
   Library: { eyebrow: "COLLECTIVE PLAYBOOK", title: "Knowledge base", text: "Frameworks, lessons and proven practices collected by the network." },
-  "Consistency Hub": { eyebrow: "THE CONSISTENCY HUB", title: "Consistency system", text: "A clean place to track discipline, learning, risk and execution without turning progress into clutter." },
+  "The Consistency Hub": { eyebrow: "THE CONSISTENCY HUB", title: "Consistency system", text: "A clean place to track discipline, learning, risk and execution without turning progress into clutter." },
   "Market News": { eyebrow: "MARKET INTELLIGENCE", title: "Stocks & shares news", text: "A clean market digest for stocks, shares and investing themes without clutter or hype." },
   Ranks: { eyebrow: "EARNED ACCESS", title: "Ranks & permissions", text: "See what unlocks as members prove consistency, useful contribution and trust inside Motion Only." },
   Admin: { eyebrow: "OPERATIONS", title: "Network operations", text: "Protect the standard. Manage access, rooms, roles and network integrity." },
@@ -3361,7 +3361,7 @@ export default function App() {
           ? <DeepWorkPage key={visibleActive} name={visibleActive} toast={toast} notificationSettings={notificationSettings} setNotificationSettings={setNotificationSettings} supabase={supabase} currentUser={currentUser}/>
         : visibleActive === "Library"
           ? <LibraryPage toast={toast}/>
-        : visibleActive === "Consistency Hub"
+        : visibleActive === "The Consistency Hub"
           ? <ConsistencyHubPage toast={toast} setActive={setActive}/>
         : visibleActive === "Marketing"
           ? <MarketingPage toast={toast}/>
