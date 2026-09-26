@@ -21,7 +21,7 @@ const featureFlags = {
 };
 
 const pageFeatureMap = {
-  "The Consistency Hub": "consistencyHub",
+  "The Trading Academy": "consistencyHub",
   Fitness: "fitness",
   Ranks: "ranks",
 };
@@ -81,7 +81,7 @@ function featureEnabled(key) {
 const nav = [
   ["Today", LayoutDashboard], ["Goals & habits", Target], ["Network", Users],
   ["Messages", MessageCircle], ["Projects", FolderKanban], ["Marketing", Megaphone], ["Schedule", CalendarDays],
-  ["Library", BookOpen], ["The Consistency Hub", TrendingUp], ["Market News", Newspaper],
+  ["Library", BookOpen], ["The Trading Academy", TrendingUp], ["Market News", Newspaper],
 ];
 
 const goals = [];
@@ -265,7 +265,7 @@ const pages = {
   Fitness: { eyebrow: "PHYSICAL STANDARD", title: "Fitness missions", text: "Set measurable targets, log attempts, prove progress and complete missions without guessing percentages." },
   Schedule: { eyebrow: "THE WEEK AHEAD", title: "Schedule", text: "Personal reminders, group calls and targeted accountability without the noise." },
   Library: { eyebrow: "COLLECTIVE PLAYBOOK", title: "Knowledge base", text: "Frameworks, lessons and proven practices collected by the network." },
-  "The Consistency Hub": { eyebrow: "THE CONSISTENCY HUB", title: "Consistency system", text: "A clean place to track discipline, learning, risk and execution without turning progress into clutter." },
+  "The Trading Academy": { eyebrow: "THE TRADING ACADEMY", title: "Consistency system", text: "A clean place to track discipline, learning, risk and execution without turning progress into clutter." },
   "Market News": { eyebrow: "MARKET INTELLIGENCE", title: "Stocks & shares news", text: "A clean market digest for stocks, shares and investing themes without clutter or hype." },
   Ranks: { eyebrow: "EARNED ACCESS", title: "Ranks & permissions", text: "See what unlocks as members prove consistency, useful contribution and trust inside Motion Only." },
   Admin: { eyebrow: "OPERATIONS", title: "Network operations", text: "Protect the standard. Manage access, rooms, roles and network integrity." },
@@ -2687,7 +2687,7 @@ function TradeDashboardPanel({ toast }) {
   return <div className="trade-dashboard">
     <section className="tch-panel lesson-brief">
       <div>
-        <p className="eyebrow">TCH MENTORSHIP · OBJECTIVE WEEK 1</p>
+        <p className="eyebrow">TRADING ACADEMY MENTORSHIP · OBJECTIVE WEEK 1</p>
         <h2>Profit is not the goal. Discipline is.</h2>
         <p>The first lesson is simple: trade one pair, one rule-set, one week. The dashboard measures whether the process was followed, not whether the trade won.</p>
       </div>
@@ -2859,7 +2859,7 @@ function ConsistencyHubPage({ toast }) {
   return <div className="consistency-page full-hub">
     <section className="consistency-hero">
       <div>
-        <p className="eyebrow">THE CONSISTENCY HUB</p>
+        <p className="eyebrow">THE TRADING ACADEMY</p>
         <h1>Consistency is the edge.</h1>
         <p>A trading mentorship area inside Motion Only: education, discipline, risk rules and execution tracking in one clean hub.</p>
         <div className="consistency-actions">
@@ -2868,7 +2868,7 @@ function ConsistencyHubPage({ toast }) {
         </div>
       </div>
       <div className="consistency-terminal">
-        <div className="terminal-head"><span>MO / TCH</span><i>Mentorship</i></div>
+        <div className="terminal-head"><span>MO / ACADEMY</span><i>Mentorship</i></div>
         <strong>Education. Discipline. Execution.</strong>
         <div className="terminal-line"><span>Risk profile</span><b>Moderate</b></div>
         <div className="terminal-line"><span>Current lesson</span><b>EURUSD rule adherence</b></div>
@@ -2912,14 +2912,14 @@ function ConsistencyHubPage({ toast }) {
     {section === "Trade Dashboard" && <TradeDashboardPanel toast={toast}/>}
 
     {featureEnabled("consistencySignals") && section === "Signals" && <>
-      <div className="tch-title"><div><p className="eyebrow">TCH TRADE DESK</p><h2>Signals</h2><span>Owner-led trade ideas with entries, invalidation and risk context.</span></div><div className="market-status"><i/> Market open</div></div>
+      <div className="tch-title"><div><p className="eyebrow">TRADING ACADEMY</p><h2>Signals</h2><span>Owner-led trade ideas with entries, invalidation and risk context.</span></div><div className="market-status"><i/> Market open</div></div>
       <div className="signal-toolbar"><div>{["All","Forex","Metal","Index"].map(item => <button className={signalFilter === item ? "active" : ""} onClick={() => setSignalFilter(item)} key={item}>{item}</button>)}</div><button onClick={() => toast("Signal filters opened.")}><SlidersHorizontal size={14}/> Filters</button></div>
       <div className="signal-cards">{filteredSignals.map(signal => <article key={signal.market} className="app-signal"><div className="signal-card-top"><div className="pair-icon">{signal.market.slice(0,2)}</div><div><b>{signal.market}</b><small>{signal.type} · Educational setup</small></div><span className={`direction ${signal.direction.toLowerCase()}`}>{signal.direction}</span></div><div className="signal-prices"><div><small>Entry</small><b>{signal.price}</b></div><div><small>Stop</small><b>{signal.stop}</b></div><div><small>Target</small><b>{signal.target}</b></div></div><div className="signal-risk"><span>Confidence {signal.confidence}%</span><i><b style={{width:`${signal.confidence}%`}}/></i><span>Risk 1.0%</span></div><button onClick={() => setSelectedSignal(signal)}>View full analysis <ArrowUpRight size={14}/></button></article>)}</div>
       {selectedSignal && <div className="modal-scrim" role="presentation" onMouseDown={() => setSelectedSignal(null)}><section className="admin-modal signal-modal" onMouseDown={event => event.stopPropagation()}><header><div><p className="eyebrow">EDUCATIONAL SETUP</p><h2>{selectedSignal.market}</h2><span>{selectedSignal.direction} setup with entry, invalidation and risk context.</span></div><button onClick={() => setSelectedSignal(null)}><X size={18}/></button></header><div className="signal-modal-body"><div className="drawer-chart"><TrendingUp size={42}/><p>Price structure chart placeholder</p></div><h3>Trade thesis</h3><p>Price has reclaimed a previous structural level and confirmed strength on the higher timeframe. The setup remains valid only while price respects the stated invalidation level.</p><div className="drawer-levels"><div><small>Entry</small><b>{selectedSignal.price}</b></div><div><small>Target</small><b>{selectedSignal.target}</b></div><div><small>Risk</small><b>1.0%</b></div></div><div className="risk-callout"><AlertTriangle size={17}/><span>This is not personal financial advice. Check suitability and size risk independently.</span></div></div></section></div>}
     </>}
 
     {section === "Academy" && <>
-      <div className="tch-title"><div><p className="eyebrow">TCH ACADEMY</p><h2>Your learning path</h2><span>Build a repeatable process one skill at a time.</span></div><div className="academy-total"><b>14</b><span>Lessons completed</span></div></div>
+      <div className="tch-title"><div><p className="eyebrow">TRADING ACADEMY</p><h2>Your learning path</h2><span>Build a repeatable process one skill at a time.</span></div><div className="academy-total"><b>14</b><span>Lessons completed</span></div></div>
       <section className="featured-course"><div><span className="eyebrow">CONTINUE WHERE YOU LEFT OFF</span><h2>Reading market structure</h2><p>Learn to identify control, direction and the levels that matter before planning an entry.</p><div className="feature-progress"><i><b style={{width:"48%"}}/></i><span>48% complete</span></div><button className="primary"><Play size={14}/> Continue lesson</button></div><div className="course-visual"><span>02 / 04</span><svg viewBox="0 0 300 160"><path d="M5 135L65 110 105 125 155 67 200 88 292 18"/><circle cx="155" cy="67" r="6"/><circle cx="292" cy="18" r="6"/></svg><small>Higher highs · Higher lows</small></div></section>
       <div className="course-grid">{tchCourses.map((course, index) => <article className="academy-course" key={course.title}><div className={`course-thumb thumb-${index}`}><span>{String(index+1).padStart(2,"0")}</span><BookOpen size={23}/></div><div className="course-info"><small>{course.tag}</small><h3>{course.title}</h3><p>{course.lessons} lessons · {course.note}</p><i><b style={{width:`${course.progress}%`}}/></i><div><span>{course.progress ? `${course.progress}% complete` : "Not started"}</span><button onClick={() => toast(`${course.title} opened.`)}><ChevronRight size={16}/></button></div></div></article>)}</div>
     </>}
@@ -3342,7 +3342,7 @@ export default function App() {
           ? <DeepWorkPage key={visibleActive} name={visibleActive} toast={toast} notificationSettings={notificationSettings} setNotificationSettings={setNotificationSettings} supabase={supabase} currentUser={currentUser}/>
         : visibleActive === "Library"
           ? <LibraryPage toast={toast}/>
-        : visibleActive === "The Consistency Hub"
+        : visibleActive === "The Trading Academy"
           ? <ConsistencyHubPage toast={toast} setActive={setActive}/>
         : visibleActive === "Marketing"
           ? <MarketingPage toast={toast}/>
